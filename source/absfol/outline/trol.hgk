@@ -1,0 +1,219 @@
+;**********************************************************************
+;*                                                                    *
+;*  This file contains the builder for those tries which are related  *
+;*  to outlines.                                                      *
+;*                                                                    *
+;**********************************************************************
+
+;**********************************************************************
+;*                                                                    *
+;*     OUTLINES                                                       *
+;*      %CUROLNAME%       The current outline name.                   *
+;*      %CURTRYLIST%      The current tries of the outlines.          *
+;*      %CURTELIST%       The current index list of deps.             *
+;*      %CURTEXISTE%      Keeps open EE-tries (for auto elimination). *
+;*      %CURTLABEL%       The current labels for tries.               *
+;*                                                                    *
+;**********************************************************************
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (curolname-get)                                                  *
+;*   (curolname-set VARNAME)                                          *
+;*   (curolname-del)                                                  *
+;*   (curolname-ini)                                                  *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB curolname-set (ONAME) (SETQ %CUROLNAME% ONAME))
+(DEFSUB curolname-get () %CUROLNAME%)
+(DEFSUB curolname-del () (SETQ %CUROLNAME% 'NOTNAMED&))
+(DEFSUB curolname-ini () (SETQ %CUROLNAME% 'NOTNAMED&))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   %CURTELIST%        ::= ALT [ MTL | <curtelst-elems> ]            *
+;*   <curtelst-elems> ::= REP [ <id-list-elem> ]                      *
+;*   <id-list-elem>   ::= < <id> . <id-list> >                        *
+;*   <id-list>        ::= < REP [ <id> ] >                            *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   For any try it remembers all the tries which depend on it (i.e.  *
+;*   those that have its <id> in their dependency list).              *
+;*   Any time a new try of the outline is stated all the new          *
+;*   dependencies must be added to %CURTELIST%.                       *
+;*   When deplist is not empty and it contains a line which is not    *
+;*   yet in CUTELIST then the current line must depend on itself      *
+;*   (as it happens with TRYASSUME and TRYEXISTE).                    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB curtelist-set (ELIST) (SETQ %CURTELIST% ELIST))
+(DEFSUB curtelist-get () %CURTELIST%)
+(DEFSUB curtelist-del () (SETQ %CURTELIST% MTL))
+(DEFSUB curtelist-ini () (SETQ %CURTELIST% MTL))
+(DEFSUB curtelist-get-depair (KEY) (HGKM-ASSOC KEY (curtelist-get)))
+(DEFSUB curtelist-add-depair (PAIR)
+ (curtelist-set (CONS PAIR (curtelist-get))))
+(DEFSUB curtelist-del-linenum (linenum)
+ (curtelist-set (curtelist-mod linenum (curtelist-get))))
+
+(DEFLAM curtelist-mod (linenum curtelist)
+ (IF (MTL? curtelist) MTL
+  (IF (ID-EQUAL (CAR (FIRST curtelist)) linenum)
+   (curtelist-mod linenum (REST curtelist))
+   (curtelist-del-dep linenum curtelist))))
+
+(DEFLAM curtelist-del-dep (linenum curelist)
+ (IF (MTL? curelist) MTL
+  (IF (HGKM-MEMBER linenum (CDR (FIRST curelist)))
+   (LCONS (CONS (CAR (FIRST curelist))
+		(HGKM-DELETE linenum (CDR (FIRST curelist))))
+	  (curtelist-del-dep linenum (REST curelist)))
+   (LCONS (FIRST curelist) (curtelist-del-dep linenum (REST curelist))))))
+
+(DEFLAM curtelist-update (deplist)
+ (IFN (IST deplist) (NOP)
+  (SEQ
+   (curtelist-update1 (FIRST deplist))
+   (curtelist-update  (REST deplist)))))
+
+(DEFSUB curtelist-update1 (DEP)
+ (LET ((DEP_PAIR (curtelist-get-depair DEP)))
+  (IF (IST DEP_PAIR) 
+   (SETREST DEP_PAIR (LCONS 1 (REST DEP_PAIR)))
+   (curtelist-add-depair (LIST DEP DEP)))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   %CURTRYLIST%   ::= ALT [ MTL | <try-list> ]                      *
+;*   <try-list> ::= REP [ <try> ]                                     *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   %CURTRYLIST% contains all the lines of the current outline. Any  *
+;*   time a new try is created it is added to it.                     *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB curtrylist-set (TLIST) (SETQ %CURTRYLIST% TLIST))
+(DEFSUB curtrylist-get ()  %CURTRYLIST%)
+(DEFSUB curtrylist-del () (SETQ %CURTRYLIST% MTL))
+(DEFSUB curtrylist-ini () (SETQ %CURTRYLIST% MTL))
+(DEFSUB curtrylist-add-try (TRY)
+ (curtrylist-set (LCONS TRY (curtrylist-get))))
+(DEFSUB curtrylist-get-try (label) (HGKM-ASSOC label (curtrylist-get)))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   %CURTEXISTE%   ::= ALT [ MTL | REP [ < listofelem> ] ]           *
+;*   <listofelem> ::= < <consequence's id> .  <premise's id> .        *
+;*                      <subst> >                                     *
+;*   <consequence's id> ::= <id>                                      *
+;*   <premise's id>     ::= <id>                                      *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Any time a new element is added to %CURTEXISTE% it alwais depend *
+;*   on itself.                                                       *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB curtexiste_substs-mak (CLABEL PLABEL SUBSTS)
+  (CONS CLABEL (CONS PLABEL SUBSTS)) )
+(DEFSUB existelem-get-name (EXISTELEM) (CAR  EXISTELEM))
+(DEFSUB existelem-get-orglabel (EXISTELEM) (CAR (CDR EXISTELEM)))
+(DEFSUB existelem-get-substvars (EXISTELEM) (CDR (CDR EXISTELEM)))
+
+(DEFSUB curtexiste-set (EXISTE) (SETQ %CURTEXISTE% EXISTE))
+(DEFSUB curtexiste-get () %CURTEXISTE%)
+(DEFSUB curtexiste-del () (SETQ %CURTEXISTE% MTL))
+(DEFSUB curtexiste-ini () (SETQ %CURTEXISTE% MTL))
+(DEFSUB curtexiste-add-substs (CURTEXISTE_SUBSTS)
+  (curtexiste-set (LCONS CURTEXISTE_SUBSTS (curtexiste-get))))
+(DEFSUB curtexiste-get-elem (id) (HGKM-ASSOC id (curtexiste-get)))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   %CURTLABEL%    ::= ALT [ MTL | REP [ <labtry> ] ]                *
+;*   <labtry> ::= < <label> . <tryname> >                             *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   %CURTLABEL% contains all the labelled tries.                     *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB labtry-mak (LABEL TRYNAME) (CONS LABEL TRYNAME))
+(DEFSUB labtry-get-ollabel (LABTRY) (CAR LABTRY))
+(DEFSUB labtry-get-tryname (LABTRY) (CDR LABTRY))
+
+(DEFSUB curtlabel-set (LABELS) (SETQ %CURTLABEL%  LABELS))
+(DEFSUB curtlabel-get () %CURTLABEL%)
+(DEFSUB curtlabel-del () (SETQ %CURTLABEL% MTL))
+(DEFSUB curtlabel-ini () (SETQ %CURTLABEL% MTL))
+(DEFSUB curtlabel-add (LABTRY)
+ (curtlabel-set (LCONS LABTRY (curtlabel-get))))
+(DEFSUB curtlabel-get-labtry (LABEL) (HGKM-ASSOC LABEL (curtlabel-get)))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (IS-MATCHED? try)                                                *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Checks if the try has been deduced by a matching rule.           *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB IS-MATCHED? (try) (EQ 'MATCH (reason-get-rule
+                                      (try-get-reason try))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (GT-PAIR-TRY try1 try2)                                          *
+;*   (EQUAL-PAIR-TRY try1 try2)                                       *
+;*   (UNIONLE-PAIR-TRY try1 try2)                                     *
+;*   (ORDER-PAIR-TRY list)                                            *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   The following PREDICATES are used in the showol.rp .             *
+;*   They are used to compare labels of tries, and to build ordered   *
+;*   list of labels.                                                  *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB GT-PAIR-TRY (trya tryb)
+ (ID-GT (try-get-label trya) (try-get-label tryb)))
+
+(DEFSUB EQUAL-PAIR-TRY (trya tryb)
+ (ID-EQUAL (try-get-label trya) (try-get-label tryb)))
+
+(DEFLAM UNIONLE-PAIR-TRY (list1 list2)
+ (IF (MTL? list1) list2
+  (IF (MTL? list2) list1
+   (IF (GT-PAIR-TRY (FIRST list1) (FIRST list2))
+    (LCONS (FIRST list2) (UNIONLE-PAIR-TRY list1 (REST list2)))
+    (IF (EQUAL-PAIR-TRY (FIRST list1) (FIRST list2))
+     (LCONS (FIRST list2) (UNIONLE-PAIR-TRY (REST list1) (REST list2)))
+     (LCONS (FIRST list1) (UNIONLE-PAIR-TRY (REST list1) list2)))))))
+
+(DEFLAM ORDER-PAIR-TRY (list)
+ (IF (MTL? list) list
+  (UNIONLE-PAIR-TRY (LIST (FIRST list)) (ORDER-PAIR-TRY (REST list)))))
+
+;**********************************************************************
+;*                                                                    *
+;*  Initialization of all the variables related to outline            *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM curol-ini ()
+ (SEQ
+  (curtrylist-ini)
+  (curtelist-ini)
+  (curtexiste-ini)
+  (curtlabel-ini)))

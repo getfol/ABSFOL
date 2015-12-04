@@ -1,0 +1,14 @@
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (OCCLIST#)                                                       *
+;*  DESCRIPTION:                                                      *
+;*   Parsing routine for occurrence list.                             *
+;*   An occlist may be either a list of integers or the atom 'ALL.    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM OCCLIST# ()
+ (IF (TKC@ 'ALL) 'ALL
+  (IF (TKC@ 'OCC) (NATNUMREP#) '(1))))
+ 

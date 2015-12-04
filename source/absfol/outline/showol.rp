@@ -1,0 +1,56 @@
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (showoutline#)                                                   *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Prints on SELECTED-OUTPUT the current outline.                   *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM showoutline# ()
+ (SEQ
+  (ENDL)
+  (cur-outline-print)))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (showtry#)                                                       *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Prints on SELECTED-OUTPUT the current %CURTLABEL%.               *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM showtry# ()
+ (SEQ
+  (ENDL)
+  (MAPCAR 'trylabel-print (REVERSE %CURTLABEL%))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (showtrypremises#)                                               *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   If MAXDEPTH is equal to ALL, then prints all the outlinetree;    *
+;*   else if MAXDEPTH is an Integer, then prints at most MAXDEPTH     *
+;*   levels of the outline tree;                                      *
+;*   If MAXDEPTH is not sepcified then prints only the first level    *
+;*   of the outline tree.                                             *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM showtrypremises# ()
+ (LET ((TRY (ID#)))
+  (IF (IST (TKC@ 'ALL))
+   (SEQ
+    (ENDL)
+    (tries-print-premises (LIST TRY) 0 'ALL))
+   (LET ((MAXDEPTH (NATNUM@)))
+    (SEQ
+     (ENDL)
+     (IF (IST MAXDEPTH)
+      (tries-print-premises (LIST TRY) 0 MAXDEPTH)
+      (tries-print-premises (LIST TRY) 0 1)))))))

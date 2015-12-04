@@ -1,0 +1,55 @@
+;; Context
+;**********************************************************************
+;*                                                                    *
+;*  Any context is a four-tuple:                                      *
+;*                                                                    *
+;*   <context> ::- <<lex>.<simulation-structure>.<facts>.<outlines>>  *
+;*                                                                    *
+;*  Here are defined the constructure and selectors of <context>.     *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM context-mak (SYMLS SIMSTRUCT FACTS OUTLINES)
+ (LIST SYMLS SIMSTRUCT FACTS OUTLINES)) 
+
+(DEFLAM context-get-lex       (CONTEXT) (FIRST CONTEXT))
+(DEFLAM context-get-simstruct (CONTEXT) (SECOND CONTEXT))
+(DEFLAM context-get-facts     (CONTEXT) (HGKM-NTH 3 CONTEXT))
+(DEFSUB context-get-outlines  (CONTEXT) (HGKM-NTH 4 CONTEXT))
+
+;**********************************************************************
+;*                                                                    *
+;*  Each <outlines> contains the following parts                      *
+;*                                                                    *
+;*   <outlines> = < <cur. outline> (list of non el. outlines) >       *
+;*                                                                    *
+;*  The non el. outlines are memorized in OLLIST.                     *
+;*  To understand the meaning of OLLIST you have to understand        *
+;*  that there is always an active outline (seen in an elementary     *
+;*  way) and a list of non active outlines (seen in a non             *
+;*  elementary way).                                                  *
+;*  NOTE:                                                             *
+;*  OLLIST is seen as something outside when switching outline and    *
+;*  something part of the context when switching context.             *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB outlines-mak (OUTLINE OLLIST) (LIST OUTLINE OLLIST))
+(DEFSUB outlines-get-outline (OUTLINES) (FIRST OUTLINES))
+(DEFSUB outlines-get-ollist (OUTLINES) (SECOND OUTLINES))
+
+
+; 1.  creation of the empty outline
+;
+(DEFSUB outlines-mak-empty ()
+ (outlines-mak (outline-mak-empty 'NOTNAMED&)(ollist-mak-empty)))
+
+
+; 2. Creation of the empty context
+;
+(DEFLAM context-mak-empty () 
+ (LIST
+  (lex-mak-empty)
+  (simstruct-mak-empty)
+  (facts-mak-empty)
+  (outlines-mak-empty)))

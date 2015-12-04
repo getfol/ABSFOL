@@ -1,0 +1,260 @@
+;*****************************************************************************
+;*                                                                           *
+;*             rightsym.hgk   -  handling `rightsyms'                        *
+;*                                                                           *
+;*                                                                           *
+;* A "Rightsym" is a particular abstract data type rappresenting a symbol    *
+;* belonging to another context. A Rightsym is the right part of any mappair.*
+;* Any rightsym is a list of all the attributes of a symbol                  *
+;* belonging to another context.                                             *
+;* There are two kinds of rightsyms:                                         *
+;* - simple  (simprightsym): rightinds and rightsents                        *
+;*                          (individuals & sentences).                       *
+;* - applied (applrightsym): rightfuns and rightpreds.                       *
+;*                          (functions & predicates).                        *
+;*                                                                           *
+;* The following attributes are possessed by every rightsym:                 *
+;* - LABEL (its name)                                                        *
+;* - SYNTACTIC TYPE (es. 'Sentpar)                                           *
+;* - SPEECH ACT, i.e. some information which is used for I/O.                *
+;* The following attributes belong only to particular types of rightsyms.    *
+;*  - SORT [only rightinds]                                                  *
+;*  - ARITY [only rightpreds and rightfuns]                                  *
+;*  - FMAPS [only rightpreds and rightfuns]                                  *
+;*  - SORTINFO [only rightsorts]                                             *
+;*                                                                           *
+;*                                                                           *
+;*                                                                           *
+;*   Constructors and destructors for rightsyms.                             *
+;*                                                                           *
+;*  SYNTAX:                                                                  *
+;*     (<rightsym type>-mak             <list of attibutes>)                 *
+;*     (<rightsym type>-get-<attibute>  rightsym)                            *
+;*     (<RIGHTSYM TYPE>?                rightsym)                            *
+;*     (<rightsym type>-mak2            rightsym newlabel)                   *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*     <rightsym type>-mak             Builds the rightsym                   *
+;*     <rightsym type>-get-<attibute>  Gets the required attibute            *
+;*     <RIGHTSYM TYPE>?                Is this rightsym of the required type?*
+;*     <rightsym type>-mak2            Given a rightsym RS and a label L,    *
+;*                                     it gives back a rightsym with label L *
+;*                                     and the same attributes of RS.        *
+;*                                                                           *
+;*****************************************************************************
+ 
+
+;*****************************************************************************
+;*                                                                           *
+;* 1. general rightsyms                                                      *
+;*                                                                           *
+;*   RIGHTSYM ::=  ( <label> . <list of other attributes> )                  *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFSUB rightsym-get-label (rightsym) (CAR rightsym))
+
+(DEFSUB rightsyms-get-labels (rightsyms) (MAPCAR 'CAR rightsyms))
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 1.1 simple rightsyms                                                      *
+;*                                                                           *
+;* SIMPLE RIGHTSYM ::=  ( <label> <typ> <sort> <sact> )                      *
+;*                                                                           *
+;*****************************************************************************
+(DEFSUB SIMPRIGHTSYM? (rightsym) (EQUAL (LENGTH (CDR rightsym)) 3))
+
+(DEFSUB simprightsym-mak (TYP LABEL SORT SACT) 
+     (CONS LABEL (LIST TYP SORT SACT)))
+
+(DEFSUB simprightsym-get-label (simprightsym)(rightsym-get-label simprightsym))
+(DEFSUB simprightsym-get-typ  (simprightsym) (HGKM-NTH 1 (CDR simprightsym))) 
+(DEFSUB simprightsym-get-sort (simprightsym) (HGKM-NTH 2 (CDR simprightsym))) 
+(DEFSUB simprightsym-get-sact (simprightsym) (HGKM-NTH 3 (CDR simprightsym))) 
+
+(DEFLAM simprightsym-mak2 (rightsym newlabel)
+ (SUBST newlabel (simprightsym-get-label rightsym) rightsym))
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 1.1.1 rightinds                                                           *
+;*                                                                           *
+;* RIGHTIND ::=  (<label> <typ> <sort> <sact>)                               *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFSUB RIGHTIND? (rightsym) 
+ (OR (EQUAL (simprightsym-get-typ  rightsym) 'Indconst)
+     (EQUAL (simprightsym-get-typ  rightsym) 'Indpar)
+     (EQUAL (simprightsym-get-typ  rightsym) 'Indvar)))
+
+(DEFSUB rightind-mak  (TYP LABEL SORT SACT)
+              (simprightsym-mak TYP LABEL SORT SACT))
+
+(DEFSUB rightind-get-typ  (rightind) (simprightsym-get-typ  rightind))
+(DEFLAM rightind-get-label (rightind) (simprightsym-get-label rightind))
+(DEFSUB rightind-get-sort (rightind) (simprightsym-get-sort rightind))
+(DEFSUB rightind-get-sact (rightind) (simprightsym-get-sact rightind))
+
+(DEFSUB rightind-mak2 (rightind newlabel)
+ (simprightsym-mak2 rightind newlabel))
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 1.1.2 rightsents                                                          *
+;*                                                                           *
+;* rightsent ::=  (<label> <typ> <sact>)                                     *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFSUB RIGHTSENT? (rightsym) 
+ (OR (EQUAL (simprightsym-get-typ  rightsym) 'Sentconst)
+     (EQUAL (simprightsym-get-typ  rightsym) 'Sentpar)))
+
+(DEFSUB rightsent-mak (TYP LABEL SACT)
+              (simprightsym-mak TYP LABEL TRUTHSORT SACT))
+
+(DEFSUB rightsent-get-typ  (rightsent) 
+              (simprightsym-get-typ  rightsent))
+(DEFLAM rightsent-get-label (rightsent) 
+              (simprightsym-get-label rightsent))
+(DEFSUB rightsent-get-sort (rightsent) 
+              (simprightsym-get-sort rightsent)) 
+(DEFSUB rightsent-get-sact (rightsent) 
+              (simprightsym-get-sact rightsent))
+
+(DEFSUB rightsent-mak2 (rightsent newlabel)
+ (simprightsym-mak2 rightsent newlabel))
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 1.2 applied rightsyms                                                     *
+;*                                                                           *
+;* APPLIED RIGHTSYM ::=  ( <label> <typ> <arity> <fmaps> <sact> <sortinfo> ) *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFSUB applrightsym-mak (TYP LABEL ARITY FMAPS SACT SORTINFO) 
+  (CONS LABEL (LIST TYP ARITY FMAPS SACT SORTINFO)))
+
+(DEFSUB applrightsym-get-label(applrightsym)(rightsym-get-label applrightsym))
+(DEFSUB applrightsym-get-typ   (applrightsym) (HGKM-NTH 1 (CDR applrightsym)))
+(DEFSUB applrightsym-get-arity (applrightsym) (HGKM-NTH 2 (CDR applrightsym)))
+(DEFSUB applrightsym-get-fmaps (applrightsym) (HGKM-NTH 3 (CDR applrightsym)))
+(DEFSUB applrightsym-get-sact  (applrightsym) (HGKM-NTH 4 (CDR applrightsym)))
+(DEFSUB applrightsym-get-sortinfo(applrightsym)(HGKM-NTH 5(CDR applrightsym)))
+
+(DEFLAM applrightsym-mak2 (rightsym newlabel)
+ (SUBST newlabel (applrightsym-get-label rightsym) rightsym))
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 1.2.1 rightfuns                                                           *
+;*                                                                           *
+;* RIGHTFUN ::=  (<label> <typ> <arity> <fmaps> <sact>)                      *
+;*                                                                           *
+;*****************************************************************************
+(DEFSUB RIGHTFUN? (rightsym) 
+ (OR (EQUAL (applrightsym-get-typ  rightsym) 'Funconst)
+     (EQUAL (applrightsym-get-typ  rightsym) 'Funpar)))
+
+(DEFSUB rightfun-mak  (TYP LABEL ARITY FMAPS SACT)
+              (applrightsym-mak TYP LABEL ARITY FMAPS SACT MTL))
+
+(DEFSUB rightfun-get-typ   (rightfun) 
+              (applrightsym-get-typ   rightfun))
+(DEFLAM rightfun-get-label  (rightfun) 
+              (applrightsym-get-label  rightfun))
+(DEFSUB rightfun-get-arity (rightfun) 
+              (applrightsym-get-arity rightfun))
+(DEFSUB rightfun-get-fmaps (rightfun) 
+              (applrightsym-get-fmaps rightfun))
+(DEFSUB rightfun-get-sact  (rightfun) 
+              (applrightsym-get-sact  rightfun))
+
+(DEFSUB rightfun-mak2 (rightfun newlabel)
+ (applrightsym-mak2 rightfun newlabel))
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 1.2.2 rightpreds                                                          *
+;*                                                                           *
+;* RIGHTPRED ::=  (<label> <typ> <arity> <fmaps> <sact>)                     *
+;*                                                                           *
+;*****************************************************************************
+(DEFSUB RIGHTPRED? (rightsym) 
+ (OR (EQUAL (applrightsym-get-typ  rightsym) 'Predconst)
+     (EQUAL (applrightsym-get-typ  rightsym) 'Predpar)))
+
+
+(DEFSUB rightpred-mak  (TYP LABEL ARITY FMAPS SACT)
+              (applrightsym-mak TYP LABEL ARITY FMAPS SACT MTL))
+
+(DEFLAM rightpred-get-typ   (rightpred) 
+              (applrightsym-get-typ   rightpred))
+(DEFLAM rightpred-get-label  (rightpred) 
+              (applrightsym-get-label  rightpred))
+(DEFSUB rightpred-get-arity (rightpred) 
+              (applrightsym-get-arity rightpred))
+(DEFSUB rightpred-get-fmaps (rightpred) 
+              (applrightsym-get-fmaps rightpred))
+(DEFSUB rightpred-get-sact  (rightpred) 
+              (applrightsym-get-sact  rightpred))
+
+(DEFSUB rightpred-mak2 (rightpred newlabel)
+ (applrightsym-mak2 rightpred newlabel))
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 1.2.3	rightsorts                                                   *
+;*                                                                           *
+;* RIGHTSORT ::=  (<label> <typ> <arity> <fmaps> <sact> <sortinfo>)          *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFSUB rightsort-mak  (TYP LABEL ARITY FMAPS SACT SORTINFO)
+              (applrightsym-mak TYP LABEL ARITY FMAPS SACT SORTINFO))
+
+(DEFSUB rightsort-get-typ   (rightsort) 
+              (applrightsym-get-typ   rightsort))
+(DEFLAM rightsort-get-label  (rightsort) 
+              (applrightsym-get-label  rightsort))
+(DEFSUB rightsort-get-arity (rightsort) 
+              (applrightsym-get-arity rightsort))
+(DEFSUB rightsort-get-fmaps (rightsort) 
+              (applrightsym-get-fmaps rightsort))
+(DEFSUB rightsort-get-sact  (rightsort) 
+              (applrightsym-get-sact  rightsort))
+(DEFSUB rightsort-get-sortinfo  (rightsort) 
+              (applrightsym-get-sortinfo  rightsort))
+
+
+(DEFSUB RIGHTSORT? (rightsym) 
+ (IF (SIMPSYM rightsym)
+  FALSE
+  (NOT (MTL? (applrightsym-get-sortinfo rightsym)))))
+
+(DEFSUB sortinfo-mak (mg lg) (LIST mg lg))
+(DEFSUB emptysortinfo-mak () MTL)
+(DEFSUB sortinfo-get-mg (sortinfo) (FIRST sortinfo))
+(DEFSUB sortinfo-get-lg (sortinfo) (SECOND sortinfo))
+
+(DEFSUB rightsort-mak2 (rightsort newlabel)
+ (applrightsym-mak2 rightsort newlabel))
+
+
+
+
+

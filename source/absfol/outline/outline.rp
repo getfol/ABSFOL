@@ -1,0 +1,22 @@
+;**********************************************************************
+;*                                                                    *
+;*  This file contains the parsing routines for OUTLINE.              *
+;*                                                                    *
+;**********************************************************************
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (OLNAME#)                                                        *
+;*   (OLNAME#)                                                        *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Scan whether (CUR-TOKEN) is an outline name. If it is then returns*
+;*   it, else return FVAL.                                            *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM OLNAME# () (REQ# (QUOTE OLNAME@) "The parser" "an outline name"))
+(DEFLAM OLNAME@ ()
+ (IFN (OUTLINE-NAME? (CUR-TOKEN)) FVAL
+  (TK-GET&NTK-PARSE)))

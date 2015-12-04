@@ -1,0 +1,310 @@
+;*****************************************************************************
+;*                                                                           *
+;*                            abstplib.fol                                   *
+;*                                                                           *
+;*        This file includes an internal rappresentation of a                *
+;*         system-defined library of abstraction prototypes.                 *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM abstype_lib-load ()
+
+;*****************************************************************************
+;*                                                                           *
+;*  1. Definition of all the symbols which are used in the internal          *
+;*     rapresentation of the abstraction prototypes.                         *
+;*                                                                           *
+;*****************************************************************************
+
+(LET (($$X (label2sym '|$x|))
+      ($$Y (label2sym '|$y|))
+      ($$X1 (label2sym '|$x1|))
+      ($$X2 (label2sym '|$x2|))
+      ($$X3 (label2sym '|$x3|))
+      ($$X4 (label2sym '|$x4|))
+      ($$A (label2sym '$A))
+      ($$B (label2sym '$B))
+      ($$C (label2sym '$C))
+      ($$f1 (label2sym '|$f1|))
+      ($$f2 (label2sym '|$f2|))
+      ($$f3 (label2sym '|$f3|))
+      ($$f4 (label2sym '|$f4|))
+      ($$P1 (label2sym '$P1))
+      ($$P2 (label2sym '$P2))
+      ($$P3 (label2sym '$P3))
+      ($$P4 (label2sym '$P4)))
+
+;*****************************************************************************
+;*  1.2 `Mapped symbols'                                                     *
+;*****************************************************************************
+
+(LET (($$IMAPX (mapsym-mak 'IMAP $$X))
+      ($$SMAPA (mapsym-mak 'SMAP $$A))
+      ($$FUMAPf1 (mapsym-mak 'FUMAP $$f1))
+      ($$FUMAPf2 (mapsym-mak 'FUMAP $$f2))
+      ($$FUMAPf3 (mapsym-mak 'FUMAP $$f3))
+      ($$FUMAPf4 (mapsym-mak 'FUMAP $$f4))
+      ($$PMAPP1 (mapsym-mak 'PMAP $$P1))
+      ($$PMAPP2 (mapsym-mak 'PMAP $$P2))
+      ($$PMAPP3 (mapsym-mak 'PMAP $$P3))
+      ($$PMAPP4 (mapsym-mak 'PMAP $$P4))
+      ($$PSMAPP1 (mapsym-mak 'PSMAP $$P1))
+      ($$PSMAPP2 (mapsym-mak 'PSMAP $$P2))
+      ($$PSMAPP3 (mapsym-mak 'PSMAP $$P3))
+      ($$PSMAPP4 (mapsym-mak 'PSMAP $$P4)))
+
+;*****************************************************************************
+;*  1.3  *ABS-applications                                                   *
+;*****************************************************************************
+
+(LET (($WABSA (WABS_appl-mak $$A))
+      ($WABSB (WABS_appl-mak $$B))
+      ($WABSC (WABS_appl-mak $$C))
+      ($TABSX (TABS_appl-mak $$X))
+      ($TABSX1 (TABS_appl-mak $$X1))
+      ($TABSX2 (TABS_appl-mak $$X2))
+      ($TABSX3 (TABS_appl-mak $$X3))
+      ($TABSX4 (TABS_appl-mak $$X4))
+      ($TABSY (TABS_appl-mak $$Y)))
+
+;*****************************************************************************
+;*                                                                           *
+;*    2. Definition of the library of abstraction prototypes                 *
+;*                                                                           *
+;*****************************************************************************
+
+(SEQ
+;************************************************************************
+;*                                                                      *
+;*  2.1                     `logic_pres'                                *
+;*                                                                      *
+;*         All abstractions which map the theory and preserve the logic.*
+;*                                                                      *
+;*                                                                      *
+;*  EQUIVALENT DECLARATION:                                             *
+;*                                                                      *
+;*  abstraction prototype logic_pres                                    *
+;*      flambda                                                         *
+;*   rules                                                              *
+;*       WABS(forall $x. $A) := forall IMAP[$x]. WABS($A)               *
+;*       WABS(exists $x. $A) := exists IMAP[$x]. WABS($A)               *
+;*       WABS($A and $B) := WABS($A) and WABS($B)                       *
+;*       WABS($A or $B)  := WABS($A) or WABS($B)                        *
+;*       WABS($A imp $B) := WABS($A) imp WABS($B)                       *
+;*       WABS($A iff $B) := WABS($A) iff WABS($B)                       *
+;*       WABS(not $A )   := not WABS($A)                                *
+;*       WABS(wffif $A then $B else $C) := wffif WABS($A) then WABS($B) *
+;*                                                        else WABS($C) *
+;*       WABS($x = $y) := (TABS($x) = TABS($y))                         *
+;*       WABS($P1($x))  :=  PMAP[$P1](TABS($x))                         *
+;*       WABS($P2($x,$y)) :=  PMAP[$P2](TABS($x),TABS($y))              *
+;*       WABS($P3($x1,$x2,$x3)) := PMAP[$P3](TABS($x1),                 *
+;*                                 TABS($x2),TABS($x3))                 *
+;*       WABS($P4($x1,$x2,$x3,$x4)) := PMAP[$P4](TABS($x1),             *
+;*                                     TABS($x2),TABS($x3),TABS($x4))   *
+;*       TABS(trmif $A then $x else $y) := trmif WABS($A) then TABS($x) *
+;*                                                        else TABS($y) *
+;*       TABS($f1($x))  :=  FUMAP[$f1](TABS($x))                        *
+;*       TABS($f2($x,$y)) :=  FUMAP[$f2](TABS($x),TABS($y))             *
+;*       TABS($f3($x1,$x2,$x3)) := FUMAP[$f3](TABS($x1),                *
+;*                                 TABS($x2),TABS($x3))                 *
+;*       TABS($f4($x1,$x2,$x3,$x4)) := FUMAP[$f4](TABS($x1),TABS($x2),  *
+;*                                     TABS($x3),TABS($x4))             *
+;*       TABS($x)   := IMAP[$x];                                        *
+;*                                                                      *
+;************************************************************************
+
+(abstypelist-add-abstype   
+ (abstype-mak 
+  '|logic_pres|
+  (absrules-mak
+   (LIST (absrule-mak (mkforall $$X $$A)(mkforall $$IMAPX $WABSA))
+         (absrule-mak (mkexists $$X $$A)(mkexists $$IMAPX $WABSA))
+         (absrule-mak (mkand $$A $$B)(mkand $WABSA $WABSB))
+         (absrule-mak (mkor $$A $$B)(mkor $WABSA $WABSB))
+         (absrule-mak (mkimp $$A $$B)(mkimp $WABSA $WABSB))
+         (absrule-mak (mkiff $$A $$B)(mkiff $WABSA $WABSB))
+         (absrule-mak (mknot $$A)(mknot $WABSA))
+         (absrule-mak (mkwffif $$A $$B $$C)(mkwffif $WABSA $WABSB $WABSC))
+         (absrule-mak (mkequ  $$X $$Y)(mkequ $TABSX $TABSY))
+         (absrule-mak (predappl1-mak $$P1 $$X)(predappl1-mak $$PMAPP1 $TABSX))
+         (absrule-mak (predappl2-mak $$P2 $$X $$Y)
+                      (predappl2-mak $$PMAPP2 $TABSX $TABSY))
+         (absrule-mak (predappl-mak $$P3 (LIST $$X1 $$X2 $$X3))
+                      (predappl-mak $$PMAPP3 (LIST $TABSX1 $TABSX2 $TABSX3)))
+         (absrule-mak (predappl-mak $$P4 (LIST $$X1 $$X2 $$X3 $$X4))
+                      (predappl-mak $$PMAPP4 (LIST $TABSX1 $TABSX2
+                                                   $TABSX3 $TABSX4)))
+         (absrule-mak (mktrmif $$A $$X $$Y)(mktrmif $WABSA $TABSX $TABSY))
+         (absrule-mak (funappl1-mak $$f1 $$X)(funappl1-mak $$FUMAPf1 $TABSX))
+         (absrule-mak (funappl2-mak $$f2 $$X $$Y)
+                      (funappl2-mak $$FUMAPf2 $TABSX $TABSY))
+         (absrule-mak (funappl-mak $$f3 (LIST $$X1 $$X2 $$X3))
+                      (funappl-mak $$FUMAPf3 (LIST $TABSX1 $TABSX2 $TABSX3)))
+         (absrule-mak (funappl-mak $$f4 (LIST $$X1 $$X2 $$X3 $$X4))
+                      (funappl-mak $$FUMAPf4 (LIST $TABSX1 $TABSX2
+                                                   $TABSX3 $TABSX4)))
+         (absrule-mak $$X $$IMAPX)))))
+
+;**************************************************************************
+;*                                                                        *
+;*  2.2                        `not&imp'                                  *
+;*                                                                        *
+;*  All abstractions which eliminate `and' `or' `iff' connectives.        *
+;*                                                                        *
+;*  abstraction prototype not&imp                                         *
+;*      flambda                                                           *
+;*   rules                                                                *
+;*       WABS(forall $x. $A) := forall IMAP[$x]. WABS($A)                 *
+;*       WABS(exists $x. $A) := exists IMAP[$x]. WABS($A)                 *
+;*       WABS(not (not $A))   := WABS($A)                                 *
+;*       WABS(not ($A and $B)) := WABS($A) imp WABS(not $B)               *
+;*       WABS(not ($A or $B))  := not (WABS(not $A) imp WABS($B))         *
+;*       WABS(not $A and not $B) := not (WABS(not $A) imp WABS($B))       *
+;*       WABS($A and $B) := not WABS($A) imp WABS(not $B)                 *
+;*       WABS($A or $B)  := WABS(not $A) or WABS($B)                      *
+;*       WABS($A imp $B) := WABS($A) imp WABS($B)                         *
+;*       WABS($A iff $B) := not ((WABS($A) imp WABS($B)) imp              *
+;*                          not (WABS($B) imp WABS($A)))                  *
+;*       WABS(not $A )   := (not WABS($A))                                *
+;*       WABS(wffif $A then $B else $C) := wffif WABS($A) then WABS($B)   *
+;*                                                        else WABS($C)   *
+;*       WABS($x = $y) := (TABS($x) = TABS($y))                           *
+;*       WABS($P1($x))  :=  PMAP[$P1](TABS($x))                           *
+;*       WABS($P2($x,$y)) :=  PMAP[$P2](TABS($x),TABS($y))                *
+;*       WABS($P3($x1,$x2,$x3)) := PMAP[$P3](TABS($x1),                   *
+;*                                           TABS($x2),TABS($x3))         *
+;*       WABS($P4($x1,$x2,$x3,$x4)) := PMAP[$P4](TABS($x1),TABS($x2),     *
+;*                                               TABS($x3),TABS($x4))     *
+;*       TABS(trmif $A then $x else $y) := trmif WABS($A) then TABS($x)   *
+;*                                                        else TABS($y)   *
+;*       TABS($f1($x))  :=  FUMAP[$f1](TABS($x))                          *
+;*       TABS($f2($x,$y)) :=  FUMAP[$f2](TABS($x),TABS($y))               *
+;*       TABS($f3($x1,$x2,$x3)) :=                                        *
+;*                  FUMAP[$f3](TABS($x1),TABS($x2),TABS($x3))             *
+;*       TABS($f4($x1,$x2,$x3,$x4)) :=                                    *
+;*                  FUMAP[$f4](TABS($x1),TABS($x2),TABS($x3),TABS($x4))   *
+;*       TABS($x)   := IMAP[$x];                                          *
+;*                                                                        *
+;**************************************************************************
+
+(abstypelist-add-abstype   
+ (abstype-mak 
+  '|not&imp|
+  (absrules-mak
+   (LIST (absrule-mak (mkforall $$X $$A)(mkforall $$IMAPX $WABSA))
+         (absrule-mak (mkexists $$X $$A)(mkexists $$IMAPX $WABSA))
+         (absrule-mak (mknot (mknot $$A)) $WABSA)
+         (absrule-mak (mknot (mkand $$A $$B))
+                      (mkimp $WABSA (WABS_appl-mak (mknot $$B))))
+         (absrule-mak (mknot (mkor $$A $$B))
+                      (mknot (mkimp (WABS_appl-mak (mknot $$A)) $WABSB)))
+         (absrule-mak (mkand (mknot $$A) (mknot $$B))
+                      (mknot (mkimp (WABS_appl-mak (mknot $$A)) $WABSB)))
+         (absrule-mak (mkand $$A $$B)
+                      (mkimp (mknot $WABSA)(WABS_appl-mak (mknot $$B))))
+         (absrule-mak (mkor $$A $$B)(mkor (WABS_appl-mak (mknot $$A)) $WABSB))
+         (absrule-mak (mkimp $$A $$B)(mkimp $WABSA $WABSB))
+         (absrule-mak (mkiff $$A $$B)
+                      (mknot (mkimp (mkimp $WABSA $WABSB)
+                                    (mknot (mkimp $WABSB $WABSA)))))
+         (absrule-mak (mknot $$A)(mknot $WABSA))
+         (absrule-mak (mkwffif $$A $$B $$C)
+                      (mkwffif $WABSA $WABSB $WABSC))
+         (absrule-mak (mkequ $$X $$Y)(mkequ $TABSX $TABSY))
+         (absrule-mak (predappl1-mak $$P1 $$X)(predappl1-mak $$PMAPP1 $TABSX))
+         (absrule-mak (predappl2-mak $$P2 $$X $$Y)
+                      (predappl2-mak $$PMAPP2 $TABSX $TABSY))
+         (absrule-mak (predappl-mak $$P3 (LIST $$X1 $$X2 $$X3))
+                      (predappl-mak $$PMAPP3 (LIST $TABSX1 $TABSX2 $TABSX3)))
+         (absrule-mak (predappl-mak $$P4 (LIST $$X1 $$X2 $$X3 $$X4))
+                      (predappl-mak $$PMAPP4 (LIST $TABSX1 $TABSX2 
+                                                   $TABSX3 $TABSX4)))
+       (absrule-mak (mktrmif $$A $$X $$Y) (mktrmif $WABSA $TABSX $TABSY))
+       (absrule-mak (funappl1-mak $$f1 $$X) (funappl1-mak $$FUMAPf1 $TABSX))
+       (absrule-mak (funappl2-mak $$f2 $$X $$Y)
+                    (funappl2-mak $$FUMAPf2 $TABSX $TABSY))
+       (absrule-mak (funappl-mak $$f3 (LIST $$X1 $$X2 $$X3))
+                    (funappl-mak $$FUMAPf3 (LIST $TABSX1 $TABSX2 $TABSX3)))
+       (absrule-mak (funappl-mak $$f4 (LIST $$X1 $$X2 $$X3 $$X4))
+                    (funappl-mak $$FUMAPf4 (LIST $TABSX1 $TABSX2
+                                                 $TABSX3 $TABSX4)))
+       (absrule-mak $$X $$IMAPX)))))
+
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;*  2.3                      `star'                                          *
+;*                                                                           *
+;*       All the possible "*-abstractions"                                   *
+;*       i.e. abstractions eliminating quantifiers and mapping each          *
+;*       predicate in a corresponding sentence.                              *
+;*                                                                           *
+;*  EQUIVALENT DECLARATION:                                                  *
+;*                                                                           *
+;*  abstraction prototype star                                               *
+;*      flambda                                                              *
+;*    rules                                                               *
+;*       WABS(forall $x. $A) := WABS($A),                                 *
+;*       WABS(exists $x. $A) := WABS($A),                                 *
+;*       WABS($A and $B) := (WABS($A) and WABS($B)),                      *
+;*       WABS($A or $B)  := (WABS($A) or WABS($B)),                       *
+;*       WABS($A imp $B) := (WABS($A) imp WABS($B)),                      *
+;*       WABS($A iff $B) := (WABS($A) iff WABS($B)),                      *
+;*       WABS(not $A )   := (not WABS($A))                                *
+;*       WABS($P1($x))  := PSMAP[$P1]                                     *
+;*       WABS($P2($x,$y)) := PSMAP[$P2]                                   *
+;*       WABS($P3($x1,$x2,$x3)) := PSMAP[$P3]                             *
+;*       WABS($P4($x1,$x2,$x3,$x4)) := PSMAP[$P4];                        *
+;*                                                                           *
+;*****************************************************************************
+
+(abstypelist-add-abstype
+ (abstype-mak
+  '|star|
+  (absrules-mak
+   (LIST (absrule-mak (mkforall $$X $$A) $WABSA)
+         (absrule-mak (mkexists $$X $$A) $WABSA)
+         (absrule-mak (mkand $$A $$B) (mkand $WABSA $WABSB))
+         (absrule-mak (mkor $$A $$B) (mkor $WABSA $WABSB))
+         (absrule-mak (mkimp $$A $$B) (mkimp $WABSA $WABSB))
+         (absrule-mak (mkiff $$A $$B) (mkiff $WABSA $WABSB))
+         (absrule-mak (mknot $$A) (mknot $WABSA))
+         (absrule-mak (predappl1-mak $$P1 $$X) $$PSMAPP1)
+         (absrule-mak (predappl2-mak $$P2 $$X $$Y) $$PSMAPP2)
+         (absrule-mak (predappl-mak $$P3 (LIST $$X1 $$X2 $$X3)) $$PSMAPP3)
+         (absrule-mak (predappl-mak $$P4 (LIST $$X1 $$X2 $$X3 $$X4))
+                                         $$PSMAPP4)))))
+
+;*****************************************************************************
+;*                                                                           *
+;*  2.4                      `gps'                                           *
+;*                                                                           *
+;*         A particular type of propositional abstractions which             *
+;*         eliminate `not' occurrences and collaps all the bynary            *
+;*         connectives into `and'.                                           *
+;*                                                                           *
+;*  abstraction prototype gps                                                *
+;*      flambda                                                              *
+;*      rules                                                                *
+;*                  WABS($A and $B) := (WABS($A) and WABS($B))               *
+;*                  WABS($A or $B)  := (WABS($A) and WABS($B))               *
+;*                  WABS($A imp $B) := (WABS($A) and WABS($B))               *
+;*                  WABS($A iff $B) := (WABS($A) and WABS($B))               *
+;*                  WABS(not $A )   := (WABS($A))                            *
+;*                  WABS($A) := SMAP[$A];                                    *
+;*                                                                           *
+;*****************************************************************************
+(abstypelist-add-abstype
+ (abstype-mak
+  '|gps|
+  (absrules-mak
+   (LIST (absrule-mak (mkand $$A $$B) (mkand $WABSA $WABSB))
+         (absrule-mak (mkor $$A $$B)  (mkand $WABSA $WABSB))
+         (absrule-mak (mkimp $$A $$B) (mkand $WABSA $WABSB))
+         (absrule-mak (mkiff $$A $$B) (mkand $WABSA $WABSB))
+         (absrule-mak (mknot $$A) $WABSA) 
+         (absrule-mak $$A $$SMAPA)))))
+)))))

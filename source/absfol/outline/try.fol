@@ -1,0 +1,74 @@
+;**********************************************************************
+;*                                                                    *
+;* This file contains all the routines for the management of tries    *
+;* and parts of tries (such as wffs, deplist, below, label)           *
+;*                                                                    *
+;**********************************************************************
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (DIFBELOW? try1 try2)                                            *
+;*   (DIFBELOW?-3 try1 try2 try3)                                     *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Those two functions check if their arguments have the same       *
+;*   below.  Return TRUE if their arguments have different below,     *
+;*   FALSE elsewhere.                                                 *
+;*                                                                    *
+;**********************************************************************
+ 
+(DEFSUB DIFBELOW? (try1 try2)
+ (LET ((below1 (try-get-below try1))
+       (below2 (try-get-below try2)))
+  (NOT (OR (STAR-BELOW? below1)
+	   (STAR-BELOW? below2)
+	   (ID-EQUAL below1 below2)))))
+
+(DEFLAM DIFBELOW?-3 (try1 try2 try3)
+ (LET ((below1 (try-get-below try1))
+       (below2 (try-get-below try2))
+       (below3 (try-get-below try3)))
+  (NOT (OR (AND (STAR-BELOW? below1) (ID-EQUAL below2 below3))
+	   (AND (STAR-BELOW? below2) (ID-EQUAL below1 below3))
+	   (AND (STAR-BELOW? below3) (ID-EQUAL below1 below2))
+	   (AND (STAR-BELOW? below1) (STAR-BELOW? below2))
+	   (AND (STAR-BELOW? below1) (STAR-BELOW? below3))
+	   (AND (STAR-BELOW? below2) (STAR-BELOW? below3))
+	   (AND (ID-EQUAL below1 below2) (ID-EQUAL below2 below3))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (BEL-REL? lab1 lab2)                                             *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Checks if lab1 is above lab2.                                    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB BEL-REL? (lab1 lab2)
+ (OR (STAR-BELOW? lab1)(ID-EQUAL lab1 lab2)))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (get-good-below try1 try2)                                       *
+;*   (get-good-below-3 try1 try2 try3)                                *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Those functions returns the first below not set to "starbel".    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB get-good-below (try1 try2)
+ (LET ((below1 (try-get-below try1)))
+  (IFN (STAR-BELOW? below1) below1
+   (try-get-below try2))))
+
+(DEFSUB get-good-below-3 (try1 try2 try3)
+ (LET ((below1 (try-get-below try1))
+       (below2 (try-get-below try2)))
+  (IFN (STAR-BELOW? below1) below1
+   (IFN (STAR-BELOW? below2) below2
+    (try-get-below try3)))))

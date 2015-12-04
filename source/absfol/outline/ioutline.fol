@@ -1,0 +1,48 @@
+;****************************************************************
+;*                                                              *
+;*   This file contains the initializations of FOL              *
+;*   Necessary to run the outline-building commands which       *
+;*   are not related to evaluation in the SS.                   *
+;*                                                              *
+;****************************************************************
+
+(mknewcommand (QUOTE TRYCANCEL)     (QUOTE FOL) (QUOTE OUTLINE)
+              (QUOTE TRYCANCEL#)     FALSE)
+(mknewcommand (QUOTE MAKEOUTLINE)   (QUOTE FOL) (QUOTE OUTLINE)
+              (QUOTE MAKEOL#)        FALSE)
+(mknewcommand (QUOTE NAMEOUTLINE)   (QUOTE FOL) (QUOTE OUTLINE)
+              (QUOTE NAMEOL#)        FALSE)
+(mknewcommand (QUOTE COPYOUTLINE)   (QUOTE FOL) (QUOTE OUTLINE)
+              (QUOTE COPYOL#)        FALSE)
+(mknewcommand (QUOTE SWITCHOUTLINE) (QUOTE FOL) (QUOTE OUTLINE)
+              (QUOTE SWITCHOL# )     FALSE)
+(mknewcommand (QUOTE RESETOUTLINE)  (QUOTE FOL) (QUOTE OUTLINE)
+              (QUOTE RESETOL#)       FALSE)
+
+;*****************************************************************
+;*                                                               *
+;* SETTING PROBE TOKENS FOR OUTLINE                              *
+;*                                                               *
+;*****************************************************************
+
+(probes-add-probe 'OUTLINE TRUE)
+
+;*****************************************************************
+;*                                                               *
+;* SETTING SHOW TOKENS FOR PROOF                                 *
+;*                                                               *
+;*****************************************************************
+
+(mknewshowtoken (QUOTE OUTLINE) (QUOTE showoutline#) (QUOTE OUTLINE))
+(mknewshowtoken (QUOTE TRYLABEL) (QUOTE showtry#) (QUOTE OUTLINE))
+(mknewshowtoken (QUOTE TRYPREMISES) (QUOTE showtrypremises#) (QUOTE OUTLINE))
+
+;*****************************************************************
+;*                                                               *
+;* OUTLINE INITIALIZATION                                        *
+;*                                                               *
+;*****************************************************************
+
+(curol-ini)		; current outline initialization
+(curolname-ini)		; current outline name initialization
+(ollist-ini)		; outlines list initialization

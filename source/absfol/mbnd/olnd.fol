@@ -1,0 +1,549 @@
+;**********************************************************************
+;*                                                                    *
+;*  This file contains all the routines for outline building.         *
+;*                                                                    *
+;**********************************************************************
+
+;**********************************************************************
+;*  SYNTAX:                                                           *
+;*   (tryassume wff)                                                  *
+;*   (tryassume-list wffs)                                            *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   They work like the assume command, creating a try in the         *
+;*   current outline. wff is the wff of the try to be assumed in      *
+;*   the outline. The try hasn't any below (nobelow), so that it      *
+;*   must be used anywhere in the proof plan.                         *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM tryassume (wff)
+ (LET ((ollabel (asid-mak)))
+  (outline-add-try
+   ollabel
+   wff
+   (deplist-mak ollabel)
+   (starbel-mak)
+   (reason-mak 'ASSUME (ras1-mak (wff_ra-mak wff))))))
+
+(DEFLAM tryassume-list (wffs)
+ (IF (MTL? wffs) (NOP)
+  (LET ((wff (FIRST wffs)))
+   (SEQ
+    (tryassume wff)
+    (tryassume-list (REST wffs))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (tryandi try1 try2)                                              *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Adds the line related to TRYANDI to the current outline.         *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM tryandi (try1 try2)
+ (IF (DIFBELOW? try1 try2) (PRINTMES "Different below!")
+  (outline-add-try
+   (irid-mak try1 try2)
+   (mkand (try-get-wff try1) (try-get-wff try2))
+   (deplist-union4id
+    (try-get-deplist try1)
+    (try-get-deplist try2) )
+   (get-good-below try1 try2)
+   (reason-mak 'ANDI
+	       (ras2-mak
+		(try_ra-mak try1)
+		(try_ra-mak try2))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (tryande try list_of_id)                                         *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Tryande adds the line related to TRYANDE to the current outline. *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM tryande (try list_of_id)
+ (outline-add-try
+  (irid-mak-1 try)
+  (wff-get-subandwff (try-get-wff try) list_of_id)
+  (try-get-deplist try)
+  (try-get-below try)
+  (reason-mak 'ANDE
+	      (ras2-mak 
+	       (try_ra-mak try)
+	       (natnums_ra-mak list_of_id)))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (tryori try wff left_right)                                      *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Tryori adds the line related to TRYORE to the current outline.   *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM tryori (try wff left_right)
+ (outline-add-try
+  (irid-mak-1 try)
+  (IF (OR (EQ left_right 'rl) (EQ left_right 'RL))
+   (mkor wff (try-get-wff try))
+   (mkor (try-get-wff try) wff))
+  (try-get-deplist try)
+  (try-get-below try)
+  (reason-mak 'ORI
+	      (ras2-mak
+	       (try_ra-mak try)
+	       (wff_ra-mak wff)))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (tryore try1 try2 try3)                                          *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Tryore adds the line related to TRYORI to the current outline.   *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM tryore (try1 try2 try3)
+ (IF (DIFBELOW?-3 try1 try2 try3) (PRINTMES "Different below!")
+  (LET ((wff1 (try-get-wff try1))
+	(wff2 (try-get-wff try2)))
+   (IFN (DISJ wff1) (FERRM0 "The 1st <try> must be a disjunction")
+    (IFN (EQUALEXP wff2 (try-get-wff try3))
+     (FERRM0 "The 2nd and 3rd <try> must have equal <wff>s")
+     (outline-add-try
+      (irid-mak try1 try2)
+      wff2
+      (deplist-union4id
+       (try-get-deplist try1)
+       (deplist-union4id
+	(deplist_of_tries-del-wff (lfor wff1)(try-get-deplist try2))
+	(deplist_of_tries-del-wff (rtor wff1)(try-get-deplist try3))))
+      (get-good-below-3 try1 try2 try3)
+      (reason-mak 'ORE
+		  (ras3-mak
+		   (try_ra-mak try1)
+		   (try_ra-mak try2)
+		   (try_ra-mak try3)))))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (tryfalse try1 try2)                                             *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   It adds the line related to TRYFALSEI to the current outline.    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM tryfalsei (try1 try2)
+ (IF (DIFBELOW? try1 try2) (PRINTMES "Different below!")
+  (LET ((wff1 (try-get-wff try1))
+	(wff2 (try-get-wff try2)) )
+   (IFN (OR (NEG wff1) (NEG wff2))
+    (FERRM0 "False introduction requires a TRY which is a negation")
+    (IF (IS-NEG-OF? wff1 wff2) (outline-falsei try1 try2)
+     (IF (IS-NEG-OF? wff2 wff1) (outline-falsei try2 try1)
+      (FERRM0 "False introduction requires that one TRY be the negation of the other.")))))))
+
+(DEFLAM outline-falsei (try1 try2)
+ (outline-add-try
+  (irid-mak try1 try2)
+  (mkfalsity)
+  (deplist-union4id (try-get-deplist try1)(try-get-deplist try2))
+  (get-good-below try1 try2)
+  (reason-mak 'FALSEI
+	      (ras2-mak
+	       (try_ra-mak try1)
+	       (try_ra-mak try2)))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (tryfalsee try1 try2)                                            *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   It adds the line related to TRYFALSEE to the current outline.    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM tryfalsee (try wff) 
+ (IFN (FALSITY (try-get-wff try)) 
+  (FERRM0 "This command requires a <try> whose <wff> is: FALSE")
+  (outline-add-try
+   (irid-mak-1 try)
+   wff
+   (try-get-deplist try)
+   (try-get-below try)
+   (reason-mak 'FALSEE
+	       (ras2-mak
+		(try_ra-mak try)
+		(wff_ra-mak wff))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (trynoti try wff)                                                *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   It adds the line related to TRYNOTI to the current outline.      *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM trynoti (try wff) 
+ (IFN (FALSITY (try-get-wff try))
+  (FERRM0 "This command requires a <try> whose <wff> is: FALSE")
+  (outline-add-try
+   (irid-mak-1 try) 
+   (mknot wff)
+   (deplist_of_tries-del-wff wff (try-get-deplist try))
+   (try-get-below try)
+   (reason-mak 'NOTI
+	       (ras2-mak
+		(try_ra-mak try)
+		(wff_ra-mak wff))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (trynote try wff)                                                *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   It adds the line related to TRYNOTE to the current outline.      *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM trynote (try wff) 
+ (IFN (FALSITY (try-get-wff try)) 
+  (FERRM0 "This command requires a <try> whose <wff> is: FALSE")
+  (IFN (NEG wff) (FERRM0 "This command requires a negation")
+   (outline-add-try
+    (irid-mak-1 try) 
+    (body wff)
+    (deplist_of_tries-del-wff wff (try-get-deplist try))
+    (try-get-below try)
+    (reason-mak 'NOTE
+		(ras2-mak
+		 (try_ra-mak try)
+		 (wff_ra-mak wff)))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (tryimpi wff try)                                                *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   It adds the line related to TRYIMPI (TDED) to the current        *
+;*   outline.                                                         *
+;*   It is important to note that we always delete the dependencies   *
+;*   when we can.                                                     *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM tryimpi (wff try)
+ (outline-add-try
+   (irid-mak-1 try)
+   (mkimp wff (try-get-wff try))
+   (deplist_of_tries-del-wff wff (try-get-deplist try))
+   (try-get-below try)
+   (reason-mak 'IMPI
+         (ras2-mak
+             (wff_ra-mak wff)
+             (try_ra-mak try)))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (tryimpe try1 try2)                                              *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   It adds the line related to TRYIMPE (TMP) to the current         *
+;*   outline. (TMP stands for Try Modus Ponens)                       *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM tryimpe (try1 try2)
+ (IF (DIFBELOW? try1 try2) (PRINTMES "Different below!")
+  (LET ((wff1 (try-get-wff try1))
+	(wff2 (try-get-wff try2)))
+   (IFN (OR (IMP wff1) (IMP wff2))
+    (FERRM0 "Implication elimination requires a TRY which is an implication")
+    (IF (IS-IMP-OF? wff1 wff2) (outline-impe try1 try2)
+     (IF (IS-IMP-OF? wff2 wff1) (outline-impe try2 try1)
+      (FERRM0 "Implies elimination requires that one TRY be the hypothesis of the other")))))))
+
+(DEFSUB outline-impe (try1 try2)
+ (outline-add-try
+  (irid-mak try1 try2)
+  (concl (try-get-wff try1)) 
+  (deplist-union4id (try-get-deplist try1) (try-get-deplist  try2))
+  (get-good-below try1 try2)
+  (reason-mak 'IMPE
+	      (ras2-mak
+	       (try_ra-mak try1)
+	       (try_ra-mak try2)))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (tryiffi try1 try2)                                              *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   It adds the line related to TRYIFFI to the current outline.      *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM tryiffi (try1 try2)
+ (IF (DIFBELOW? try1 try2) (PRINTMES "Different below!")
+  (IFN (AND (IMP (try-get-wff try1)) (IMP (try-get-wff try2)) )
+   (FERRM0 "TRYIFFI requires that both <try>s have <wff>s with main symbol <imp>")
+   (LET ((wff1 (try-get-wff try1))
+	 (wff2 (try-get-wff try2)))
+    (LET ((hyp1 (hypot wff1))
+	  (hyp2 (hypot wff2)))
+     (IFN (AND (EQUALEXP hyp1 (concl wff2))
+	       (EQUALEXP hyp2 (concl wff1)))
+      (FERRM0 "The hypot of <wff>1 be uqual to the concl of <wff>2 and viceversa")
+      (outline-add-try
+       (irid-mak try1 try2)
+       (mkiff hyp1 hyp2)
+       (deplist-union4id (try-get-deplist try1) (try-get-deplist try2))
+       (get-good-below try1 try2)
+       (reason-mak 'IFFI
+		   (ras2-mak
+		    (try_ra-mak try1)
+		    (try_ra-mak try2))))))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (tryiffe try natnum)                                             *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   It adds the line related to TRYIFFE to the current outline.      *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM tryiffe (try natnum)
+ (LET ((wff (try-get-wff try)))
+  (IFN (IFF wff)
+   (FERRM0 "TRYIFFE requires a <try> with a <wff> with <iff> as main symbol")
+   (LET ((wff (wffiff-get-wffimp wff natnum)))
+    (outline-add-try
+     (irid-mak-1 try)
+     wff
+     (try-get-deplist try)
+     (try-get-below try)
+     (reason-mak 'IFFE
+		 (ras2-mak
+		  (try_ra-mak try)
+		  (natnum_ra-mak natnum))))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (tryalli try substlist)                                          *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   It adds the line related to TRYALLI to the current outline.      *
+;*                                                                    *
+;*  NOTE:                                                             *
+;*   (tryalli) reverses the list of substitutions because             *
+;*   substitutions in 1st order logic go from the inside to the       *
+;*   outside.                                                         *
+;*   (wfforall-mak) computes the freevars at any call and so it is    *
+;*   able to quantify (renaming) on a variable which has be bound in  *
+;*   able to quantify (renaming) on a variable which has be bound in  *
+;*   in the step before.                                              *
+;*   This function constrain the user to apply alli on variables      *
+;*   appearing free in an assumption beause the refinement might      *
+;*   modify the premises of a try, therefore making the check         *
+;*   meaningless.                                                     *
+;*   ol2prf guarantee the soundess of the introduction rule           *
+;*   applications.                                                    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM tryalli (try substlist)
+ (outline-add-try
+  (irid-mak-1 try)
+  (wfforall-mak (try-get-wff try) (REVERSE substlist))
+  (try-get-deplist try)
+  (try-get-below try)
+  (reason-mak 'ALLI
+	      (ras2-mak
+	       (try_ra-mak try)
+	       (substlist_ra-mak substlist)))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (tryalle try termlist)                                           *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   It adds the line related to TRYALLE to the current outline.      *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM tryalle (try termlist)
+ (outline-add-try
+  (irid-mak-1 try)
+  (alle-mak (try-get-wff try) termlist) 
+  (try-get-deplist try)
+  (try-get-below try) 
+  (reason-mak 'ALLE
+	      (ras2-mak
+               (try_ra-mak try)
+               (terms_ra-mak termlist)))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (tryexisti try termlist)                                         *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   It adds the line related to TRYEXISTI to the current outline.    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM tryexisti (try termlist)
+ (outline-add-try
+  (irid-mak-1 try)
+  (wffexists-mak (try-get-wff try) termlist)
+  (try-get-deplist try)
+  (try-get-below try)
+  (reason-mak 'EXISTI
+	      (ras2-mak
+	       (try_ra-mak try)
+	       (terms+occ_ra-mak termlist)))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (tryexiste try varorparlist)                                     *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   It adds the line related to TRYEXISTE to the current outline.    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM tryexiste (try varorparlist)
+ (LET ((wff (existe-mak (try-get-wff try) varorparlist))
+       (irid (irid-mak-1 try)))
+  (SEQ
+   (curtexiste-add-substs
+    (curtexiste_substs-mak irid (try-get-label try) varorparlist) )
+   (outline-add-try
+    irid
+    wff
+    (deplist-mak irid)
+    (try-get-below try)
+    (reason-mak 'EXISTE
+		(ras2-mak
+		 (try_ra-mak try)
+		 (varorparlist_ra-mak varorparlist)))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (trysubst try1 try2 intlist left_right)                          *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   The "subst" command implements the  substitution rule for        *
+;*   equality. The rule has two premises, one of which must be an     *
+;*   equality, that is its wff must be of the form "t1 = t2", where   *
+;*   t1 and t2 are terms.  Thus t1 and t2 are not ground. The other   *
+;*   is any wff.  The conclusion's wff is obtained by substituting    *
+;*   the right hand of the equality (t2) in place of any "FREE"       *
+;*   occurrence of the left hand (t1) in the latter premises. If a    *
+;*   particular list of occurrences is specified, then the            *
+;*   substitution is performed only in the occurrences which are      *
+;*   specified in the list.                                           *
+;*   The rule can be described as:                                    *
+;*                                                                    *
+;*                        A(t1)    t1 = t2                            *
+;*                       ------------------                           *
+;*                             A(t2)                                  *
+;*                                                                    *
+;*   Note that if there is no free occurrence of t1 in A(t1), then    *
+;*   the rule does not fail, but simply returns a conclusion whose    *
+;*   wff is equal to A(t1).                                           *
+;*                                                                    *
+;*   The conclusion depends on the union of the facts the premises    *
+;*   depend on.                                                       *
+;*                                                                    *
+;*   try1: the fact in which the substitution is performed try2: the  *
+;*   fact whose wff is an equality of the kind t1 = t2                *
+;*   intlist: a possible empty list of occurrences of the term to     *
+;*            to be substituted in try1' s wff                        *
+;*   left_right: can be "left" or "right" and indicates which hand    *
+;*   of the equality must be substituted. The default is "left"       *
+;*                                                                    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM trysubst (try1 try2 intlist left_right)
+ (IF (DIFBELOW? try1 try2) (PRINTMES "Different below!")
+  (LET ((wff2 (try-get-wff try2)))
+   (IFN (EQU wff2) (ERRMES-printexp wff2 " : it is not an equality.")
+    (LET ((intlist_or_all (IFN (MTL? intlist) intlist 'ALL)))
+     (outline-add-try 
+      (irid-mak try1 try2)
+      (IF (OR (EQ left_right 'RIGHT) (EQ left_right 'right))
+       (substexp+occ (rtequ wff2)(lfequ wff2)
+		   (try-get-wff try1) intlist_or_all)
+       (substexp+occ (lfequ wff2)(rtequ wff2)
+		   (try-get-wff try1) intlist_or_all))
+      (deplist-union4id (try-get-deplist try1)(try-get-deplist try2))
+      (get-good-below try1 try2)
+      (reason-mak 'SUBST
+		(ras4-mak
+		 (try_ra-mak try1)
+		 (try_ra-mak try2)
+		 (natnums_ra-mak intlist)
+		 (left_right_ra-mak left_right)))))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX                                                            *
+;*   (matchtry try1 try2)                                             *
+;*                                                                    *
+;*  DESCRIPTION                                                       *
+;*   matchtry verifies that:                                          *
+;*    1. try1 is below try2 or viceversa;                             *
+;*    2. the two tries have the same wff;                             *
+;*    3. the try below is not bound to any other try.                 *
+;*   This function does side effect on the reason of the try above.   *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM matchtry (try1 try2)
+ (IF (BEL-REL? (try-get-below try1) (try-get-label try2))
+  (IF (EQUALEXP (try-get-wff try1) (try-get-wff try2))
+   (try-bind try1 try2)
+   (PRINTMES "You can't match tries with different <wff>s"))
+  (IF (BEL-REL? (try-get-below try2) (try-get-label try1))
+   (IF (EQUALEXP (try-get-wff try1) (try-get-wff try2))
+    (try-bind try2 try1)
+    (PRINTMES "You can't match tries with different <wff>s"))
+   (PRINTMES "The first <try> is not above/below the second <try>."))))
+
+(DEFLAM try-bind (actor object)
+ (IF (IS-MATCHED? object)
+  (PRINTMES "You can't do that. The <try> below is already matched.")
+  (SEQ
+   (try-replace-reason object 
+                       (reason-mak 'MATCH
+                                   (ras1-mak (try_ra-mak actor))))
+
+   (id-print (try-get-label object))
+   (HGKM-PRINC " has been bound to ")
+   (id-print (try-get-label actor))
+   (HGKM-PRINC "."))))

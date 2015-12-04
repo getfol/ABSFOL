@@ -1,0 +1,259 @@
+;**********************************************************************
+;*                                                                    *
+;*  This file contains all the code to instantiate.                   *
+;*                                                                    *
+;**********************************************************************
+
+;**********************************************************************
+;*                                                                    *
+;*  Instantiation of a reason: symbols                                *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB reason-insts (reason sympair occlist)
+ (reason-mak
+  (reason-get-rule reason)
+  (ras-insts (reason-get-ras reason) sympair occlist)))
+
+(DEFLAM ras-insts (ras sympair occlist)
+ (IF (RAS-EMPTY ras) MTL
+  (LCONS
+   (ra-insts (ras-get-first ras) sympair occlist)
+   (ras-insts (ras-get-rest ras) sympair occlist))))
+
+(DEFLAM ra-insts (ra sympair occlist)
+ (IF (INDCONST_RA ra) (indconst_ra-insts ra sympair occlist)
+  (IF (VARORPARLIST_RA ra) (varorparlist_ra-insts ra sympair occlist)
+   (IF (OR (TERM_RA ra) (EXP_RA ra) (WFF_RA ra))
+    (exp_ra-insts ra sympair occlist)
+    (IF (OR (TERMS_RA ra) (WFFS_RA ra) (TERMS+OCC_RA ra))
+     (exps_ra-insts ra sympair occlist)
+     (IF (OR (FACT_RA ra) (AXIOM_RA ra) (DEFN_RA ra) (FACTS_RA ra))
+      (everyother_ra-insts ra)
+      (IF (AXIOMSCHEMA_RA ra) (axiomschema_ra-insts ra sympair occlist)
+       (IF (SUBSTLIST_RA ra) (substlist_ra-insts ra sympair occlist)
+	(IF (FACTAND_RA ra) (everyother_ra-insts ra)
+	 (everyother_ra-insts ra))))))))))
+
+
+;**********************************************************************
+;*                                                                    *
+;*   Instantiations of symbols                                        *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB indconst_ra-insts (ra sympair occlist)
+ (SEQ
+  (occs-ini occlist)
+  (LCONS (ra-get-type ra)
+	 (sym-rewrite (ra-get-value ra) sympair occlist))))
+
+(DEFSUB varorparlist_ra-insts (ra sympair occlist)
+ (ra-mak (ra-get-type ra)
+	 (syms-rewrite (ra-get-value ra) sympair occlist)))
+
+(DEFLAM syms-rewrite (syms sympair occlist)
+ (IF (MTL? syms) MTL
+  (SEQ
+   (occs-ini occlist)
+   (LCONS (sym-rewrite  (FIRST syms) sympair occlist)
+          (syms-rewrite (REST syms) sympair occlist)))))
+
+(DEFLAM substlist_ra-insts (ra sympair occlist)
+ (ra-mak (ra-get-type ra)
+	 (substlist-insts (ra-get-value ra) sympair occlist)))
+
+(DEFLAM substlist-insts (subst sympair occlist)
+ (IF (MTL? subst) MTL
+  (SEQ
+   (occs-ini occlist)
+   (LET ((left (sym-rewrite (sympair-get-lsym (FIRST subst))
+			    sympair occlist)))
+    (SEQ
+     (occs-ini occlist)
+     (LET ((right (sym-rewrite (sympair-get-rsym (FIRST subst))
+			       sympair occlist)))
+      (LCONS (sympair-mak left right)
+	     (substlist-insts (REST subst) sympair occlist))))))))
+
+(DEFSUB exp_ra-insts (ra sympair occlist)
+ (SEQ
+  (occs-ini occlist)
+  (ra-mak (ra-get-type ra)
+	  (exp-rewrite-sym (ra-get-value ra) sympair occlist))))
+
+(DEFSUB exps_ra-insts (ra sympair occlist)
+ (ra-mak (ra-get-type ra)
+	 (diffexps-rewrite-sym (ra-get-value ra) sympair occlist)))
+
+(DEFLAM diffexps-rewrite-sym (explist sympair occlist)
+ (IF (MTL? explist) MTL
+  (SEQ
+   (occs-ini occlist)
+   (LCONS (exp-rewrite-sym (FIRST explist) sympair occlist)
+	  (diffexps-rewrite-sym (REST explist) sympair occlist)))))
+
+(DEFSUB axiomschema_ra-insts (ra sympair occlist)
+ (LET ((value (ra-get-value ra)))
+  (LET ((wtsubstrep (CDR value)))
+   (axiomschema_ra-mak 
+    (CONS (CAR value)(wtsubstrep_ra-insts wtsubstrep sympair occlist))))))
+
+(DEFLAM wtsubstrep_ra-insts (wtsubstrep sympair occlist)
+ (IF (MTL? wtsubstrep) MTL
+  (LCONS (wtsubst_ra-insts (CAR wtsubstrep) sympair occlist)
+	 (wtsubstrep_ra-insts (CDR wtsubstrep) sympair occlist))))
+
+(DEFSUB wtsubst_ra-insts (wtsubst sympair occlist)
+ (SEQ
+  (occs-ini occlist)
+  (LCONS (CAR wtsubst)
+	 (CONS (CAR (CDR wtsubst))
+	       (exp-rewrite-sym (CDR (CDR wtsubst)) sympair occlist)))))
+
+
+;**********************************************************************
+;*                                                                    *
+;*  Instantiation of a reason: exps                                   *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB reason-instexp (reason exppair occlist)
+ (reason-mak
+  (reason-get-rule reason)
+  (ras-instexp (reason-get-ras reason) exppair occlist)))
+
+(DEFLAM ras-instexp (ras exppair occlist)
+ (IF (RAS-EMPTY ras) MTL
+  (LCONS (ra-instexp  (ras-get-first ras) exppair occlist)
+	 (ras-instexp (ras-get-rest ras)  exppair occlist))))
+
+(DEFLAM ra-instexp (ra exppair occlist)
+ (IF (INDCONST_RA ra) (indconst_ra-insts ra exppair occlist)
+  (IF (VARORPARLIST_RA ra) (varorparlist_ra-insts ra exppair occlist)
+   (IF (OR (TERM_RA ra) (EXP_RA ra) (WFF_RA ra))
+    (exp_ra-instexp ra exppair occlist)
+    (IF (OR (TERMS_RA ra) (WFFS_RA ra) (TERMS+OCC_RA ra))
+     (exps_ra-instexp ra exppair occlist)
+     (IF (OR (FACT_RA ra) (AXIOM_RA ra) (DEFN_RA ra) (FACTS_RA ra))
+      (everyother_ra-insts ra)
+      (IF (AXIOMSCHEMA_RA ra) (axiomschema_ra-instexp ra exppair occlist)
+       (IF (SUBSTLIST_RA ra) (substlist_ra-insts ra exppair occlist)
+	(IF (FACTAND_RA ra) (everyother_ra-insts ra)
+	 (everyother_ra-insts ra))))))))))
+
+;**********************************************************************
+;*                                                                    *
+;*   Instantiations of exps                                           *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB exp_ra-instexp (ra sympair occlist)
+ (SEQ
+  (occs-ini occlist)
+  (ra-mak (ra-get-type ra)
+	  (exp-rewrite-wff (ra-get-value ra) sympair occlist))))
+
+(DEFSUB exps_ra-instexp (ra sympair occlist)
+ (ra-mak (ra-get-type ra)
+	 (diffexps-rewrite-exp (ra-get-value ra) sympair occlist)))
+
+(DEFLAM diffexps-rewrite-exp (explist sympair occlist)
+ (IF (MTL? explist) MTL
+  (SEQ
+   (occs-ini occlist)
+   (LCONS (exp-rewrite-wff (FIRST explist) sympair occlist)
+	  (diffexps-rewrite-exp (REST explist) sympair occlist)))))
+
+(DEFSUB axiomschema_ra-instexp (ra exppair occlist)
+ (LET ((value (ra-get-value ra)))
+  (LET ((wtsubstrep (CDR value)))
+   (SEQ
+    (occs-ini occlist)
+    (axiomschema_ra-mak
+     (CONS (CAR value)
+	   (wtsubstrep_ra-instexp wtsubstrep exppair occlist)))))))
+
+(DEFLAM wtsubstrep_ra-instexp (wtsubstrep exppair occlist)
+ (IF (MTL? wtsubstrep) MTL
+   (LCONS (wtsubst_ra-instexp (CAR wtsubstrep) exppair occlist)
+	  (wtsubstrep_ra-instexp (CDR wtsubstrep) exppair occlist))))
+
+(DEFSUB wtsubst_ra-instexp (wtsubst exppair occlist)
+ (SEQ
+  (occs-ini occlist)
+   (LCONS (CAR wtsubst)
+	  (CONS (CAR (CDR wtsubst))
+		(exp-rewrite-wff (CDR (CDR wtsubst)) exppair occlist)))))
+
+(DEFSUB everyother_ra-insts (ra)  ra)
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX                                                            *
+;*   (insts-list trylist sympair occlist abstraction)                 *
+;*   (insts try sympair occlist abstraction)                          *
+;*   (instw-list trylist wffpair occlist abstraction)                 *
+;*   (instw try sympair occlist abstraction)                          *
+;*                                                                    *
+;*  DESCRIPTION                                                       *
+;*   Instantiation of tries rewriting symbols or wffs:                *
+;*   the routines with suffix '-list' handle the list of try (that is *
+;*   they scan the list), whilst the other two create a new try with  *
+;*   the rewritten wff.                                               *
+;*                                                                    *
+;**********************************************************************
+ 
+(DEFLAM insts-list (trylist sympair occlist abstraction)
+ (IF (MTL? (REST trylist))
+  (insts (FIRST trylist) sympair occlist abstraction)
+  (SEQ
+   (insts (FIRST trylist) sympair occlist abstraction)
+   (insts-list (REST trylist) sympair occlist abstraction))))
+
+(DEFLAM insts (try sympair occlist abstraction)
+ (SEQ
+  (occs-ini occlist)
+  (outline-replace-try
+   (try-mak (try-get-label try)
+	    (wff-rewrite-sym (try-get-wff try)
+			     sympair occlist abstraction)
+	    (try-get-deplist try)
+	    (try-get-below try)
+	    (reason-insts (try-get-reason try) sympair occlist)))))
+
+(DEFLAM instw-list (trylist wffpair occlist abstraction)
+ (IF (MTL? (REST trylist))
+  (instw (FIRST trylist) wffpair occlist abstraction)
+  (SEQ
+   (instw (FIRST trylist) wffpair occlist abstraction)
+   (instw-list (REST trylist) wffpair occlist abstraction))))
+ 
+(DEFLAM instw (try wffpair occlist abstraction)
+ (SEQ
+  (occs-ini occlist)
+  (outline-replace-try
+   (try-mak (try-get-label try)
+	    (wff-rewrite-wff (try-get-wff try) wffpair
+			     occlist abstraction)
+	    (try-get-deplist try)
+	    (try-get-below try)
+	    (reason-instexp (try-get-reason try) wffpair occlist)))))
+
+(DEFLAM instt-list (trylist termpair occlist abstraction)
+ (IF (MTL? (REST trylist))
+  (instt (FIRST trylist) termpair occlist abstraction)
+  (SEQ
+   (instt (FIRST trylist) termpair occlist abstraction)
+   (instt-list (CDR trylist) termpair occlist abstraction))))
+ 
+(DEFLAM instt (try termpair occlist abstraction)
+ (SEQ
+  (occs-ini occlist)
+  (outline-replace-try
+   (try-mak (try-get-label try)
+	    (wff-rewrite-wff (try-get-wff try) termpair
+			     occlist abstraction)
+	    (try-get-deplist try)
+	    (try-get-below try)
+	    (reason-instexp (try-get-reason try) termpair occlist)))))

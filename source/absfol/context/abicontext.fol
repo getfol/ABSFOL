@@ -1,0 +1,9 @@
+; *********************************************************
+; *                                                       *
+; *  This file contains the initializations of FOL        *
+; *  Which are necessary for proof/outline/context/folsys *
+; *  switching, and language copying                      *
+; *                                                       *
+; *********************************************************
+
+(clist-ini)           ; contexts list initialization

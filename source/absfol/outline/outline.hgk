@@ -1,0 +1,98 @@
+;**********************************************************************
+;*                                                                    *
+;*  This file contains all the code necessary to elementary and non   *
+;*  elementary management of outlines.                                *
+;*                                                                    *
+;**********************************************************************
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   %OLLIST%           ::= ALT [ MTL | REP [ <outline-elem> ]        *
+;*   <outline-elem>   ::= < <oname> . <outline> >                     *
+;*   <oname>          ::= ALT [ NOTNAMED& | FOLSYM ]                  *
+;*   <outline>        ::= list of <ol>s                               *
+;*   <ol>             ::= < <trylist> <tryelist>                      *
+;*                          <tryexiste> <trylabel> >                  *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   <trylist> is the list of trues of the outline;                   *
+;*   <tryelist> is the dependency list of the outline;                *
+;*   <tryexiste> keep open EE-rules of the outline;                   *
+;*   <trylabel> is a list of all the labeled tries of the outline.    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB ol-mak (TLIST TELIST TEXISTE TLABEL) 
+                    (LIST TLIST TELIST TEXISTE TLABEL))
+(DEFSUB ol-get-trylist (OL) (HGKM-NTH 1 OL))
+(DEFSUB ol-get-telist (OL) (HGKM-NTH 2 OL))
+(DEFSUB ol-get-texiste (OL) (HGKM-NTH 3 OL))
+(DEFSUB ol-get-tlabel (OL) (HGKM-NTH 4 OL))
+
+(DEFSUB ol-mak-empty () (ol-mak MTL MTL MTL MTL ))
+
+(DEFSUB outline-mak (ONAME OL) (LIST ONAME OL))
+(DEFSUB outline-get-olname (OL) (FIRST OL))
+(DEFSUB outline-get-ol (OL) (SECOND OL))
+(DEFSUB outline-mak-empty (ONAME) (outline-mak ONAME (ol-mak-empty))) 
+
+(DEFSUB ollist-get () %OLLIST%)
+(DEFSUB ollist-set (OUTLINES) (SETQ %OLLIST% OUTLINES))
+(DEFSUB ollist-del () (SETQ %OLLIST% MTL))
+(DEFSUB ollist-ini () (SETQ %OLLIST% MTL))
+(DEFSUB ollist-mak-empty () MTL)
+(DEFSUB ollist-get-outline (ONAME) (HGKM-ASSOC ONAME (ollist-get)))
+
+(DEFSUB ollist-set-outline (OUTLINE) 
+ (ollist-set (HGKM-REPLACE (outline-get-olname OUTLINE) 
+			    (LIST (outline-get-ol OUTLINE))
+			    (ollist-get))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (OUTLINE-NAME? X)                                                *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Checks if X is an outline name or not.                           *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB OUTLINE-NAME? (X) (HGKM-ASSOC X (ollist-get)))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (CUROUTLINE-UNNAMED?)                                            *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Checks if the current outline is unnamed.                        *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB CUROUTLINE-UNNAMED? () (EQ (curolname-get) 'NOTNAMED&))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (CUROUTLINE-NAME? ONAME)                                         *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Checks if ONAME is the name of the current outline.              *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB CUROUTLINE-NAME? (ONAME) (EQ ONAME (curolname-get)))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (OUTLINE-UNNAMED? ONAME)                                         *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Checks if ONAME is the name of the unnamed outline.              *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB OUTLINE-UNNAMED? (ONAME) (EQ ONAME 'NOTNAMED&))

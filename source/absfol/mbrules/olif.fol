@@ -1,0 +1,188 @@
+;**********************************************************************
+;*                                                                    *
+;* This file scontains all the routines for natural deduction outline *
+;* building using the "if" rule.                                      *
+;*                                                                    *
+;**********************************************************************
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   trytermife <try1> <try2> <termif> OPT[ <seq_of_natnums> ]        *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   As in the case of the command "termife" for proof, the only      *
+;*   precondition required is that <try2>'s wff must be <termif>.     *
+;*   This rules substitutes <termif> with <termif>'s "then part"      *
+;*   in <try1>'s wff. In the <termif> is not a subexpression of       *
+;*   <try1>'s wff, no substitution takes place and a new try is       *
+;*   asserted whose wff is equal to <try1>'s wff.                     *
+;*   If the <seq_of_natnums> is not specified, the substitution is    *
+;*   performed in all occurences of <termif> in <try1>'s wff.         *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM trytermife (try1 try2 termif occurrences)
+ (IF (DIFBELOW? try1 try2)(PRINTMES "Different below!")
+  (IFN (EQUALEXP (try-get-wff try2)(ifof termif))
+   (FERRM0 "The wff of the 2nd try must be the condition of the ifterm")
+   (LET ((occ (IFN (MTL? occurrences) occurrences 'ALL)))
+    (outline-add-try
+     (irid-mak try1 try2)
+     (substexp+occ termif (thenof termif)(try-get-wff try1) occ)
+     (try-union-dep try1 try2)
+     (get-good-below try1 try2)
+     (reason-mak 'TERMIFE
+                 (ras4-mak (try_ra-mak try1)
+                           (try_ra-mak try2)
+                           (term_ra-mak termif)
+                           (occurences_ra-mak occ))))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   trytermifen <try1> <try2> <termif> OPT[ <seq_of_natnums> ]       *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   The only precondition required is that <try2>'s wff must be the  *
+;*   negation of <termif>'s condition.                                *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM trytermifen (try1 try2 termif occurrences)
+ (IF (DIFBELOW? try1 try2)(PRINTMES "Different below!")
+  (IFN (EQUALEXP (try-get-wff try2)(mknot (ifof termif)))
+   (FERRM0 "The wff of the 2nd try must be the negation of the condition of the ifterm")
+   (LET ((occ (IFN (MTL? occurrences) occurrences 'ALL)))
+    (outline-add-try
+     (irid-mak try1 try2)
+     (substexp+occ termif (elseof termif)(try-get-wff try1) occ)
+     (try-union-dep try1 try2)
+     (get-good-below try1 try2)
+     (reason-mak 'TERMIFEN
+                 (ras4-mak (try_ra-mak try1)
+                           (try_ra-mak try2)
+                           (term_ra-mak termif)
+                           (occurences_ra-mak occ))))))))
+
+
+;**********************************************************************
+;*                                                                    *
+;* SYNTAX:                                                            *
+;*  trytermifi <try1> <try2> <wff> <term1> <term2>                    *
+;*                                                                    *
+;* DESCRIPTION:                                                       *
+;*  The only precondition is that <try1>'s and <try2>'s wff must      *
+;*  differ because of <term1> in <try1>'s wff in place of <term2>.    *
+;*  This rule replaces in <try1>'s wff <term1> with " termif <wff>    *
+;*  then <term1> else <term2> ", discharging any assumption in        *
+;*  <try1>'s dependencies whose wff is equal to <wff> and any         *
+;*  assumption in <try2>'s dependencies whose wff is equal to         *
+;*  "not <wff> ".                                                     *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM trytermifi (try1 try2 wff term1 term2)
+ (IF (DIFBELOW? try1 try2)(PRINTMES "Different below!")
+  (IFN (EQUALEXP (substexp+occ term1 term2 (try-get-wff try1) 'ALL)
+                 (try-get-wff try2))
+   (FERRM0 "Termif introduction requires two tries with wffs that differ only for the two terms given as input.")
+   (outline-add-try
+    (irid-mak try1 try2)
+    (substexp+occ term1 (mktrmif wff term1 term2)(try-get-wff try1) 'ALL)
+    (deplist-union4id (deplist_of_tries-del-wff wff (try-get-deplist try1))
+                      (deplist_of_tries-del-wff (mknot wff)
+                                                (try-get-deplist try2)))
+    (get-good-below try1 try2)
+    (reason-mak 'TERMIFI
+                (ras5-mak (try_ra-mak try1)
+                          (try_ra-mak try2)
+                          (wff_ra-mak wff)
+                          (term_ra-mak term1)
+                          (term_ra-mak term2)))))))
+
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   trywffife <try1> <try2>                                          *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   The only precondition is that <try1>'s wff was a wffif and       *
+;*   <try2>'s wff <try1>'s wff condition.                             *
+;*   This rule deduce a try whose wff is the "then part" of           *
+;*   <try1>'s wff.                                                    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM trywffife (try1 try2)
+ (IF (DIFBELOW? try1 try2)(PRINTMES "Different below!")
+  (IFN (WFFIF (try-get-wff try1))
+   (FERRM0 "wffif elimination requires a wffif (as 1st argument).")
+   (IFN (EQUALEXP (ifof (try-get-wff try1))(try-get-wff try2))
+    (FERRM0 "wffif elimination requires a wff equal to the conditional
+            of the first wff (as 2nd argument).")
+    (outline-add-try
+     (irid-mak try1 try2)
+     (thenof (try-get-wff try1))
+     (try-union-dep try1 try2)
+     (get-good-below try1 try2)
+     (reason-mak 'WFFIFE
+                 (ras2-mak (try_ra-mak try1)
+                           (try_ra-mak try2))))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   trywffifen <try1> <try2>                                         *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   The only precondition is that <try1>'s wff was a wffif and       *
+;*   <try2>'s wff was the negation of <try1> wff's condition.         *
+;*   This rule deduce a try whose wff is the "else part" of           *
+;*   <try1>'s wff.                                                    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM trywffifen (try1 try2)
+ (IF (DIFBELOW? try1 try2)(PRINTMES "Different below!")
+  (IFN (WFFIF (try-get-wff try1))
+   (FERRM0 "wffifen elimination requires a wffif (as 1st argument).")
+   (IFN (EQUALEXP (mknot (ifof (try-get-wff try1)))(try-get-wff try2))
+    (FERRM0 "wffifen elimination requires a wff negation of the conditional
+            of the first wff (as 2nd argument).")
+    (outline-add-try
+     (irid-mak try1 try2)
+     (elseof (try-get-wff try1))
+     (try-union-dep try1 try2)
+     (get-good-below try1 try2)
+     (reason-mak 'WFFIFEN
+                 (ras2-mak (try_ra-mak try1)
+                           (try_ra-mak try2))))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   trywffifi <wff> <try1> <try2>                                    *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   It deduces a try whose wff is the                                *
+;*   "wffif <wff> then <<try1>'s wff> else <<try2>'s wff>".           *
+;*   Any assumption in <try1>'s dependencies whose wff is equal to    *
+;*   <wff> and any assumption in <try2>'s dependencies whose wff is   *
+;*   equal "not <wff>" are discharged.                                *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM trywffifi (wff try1 try2)
+ (outline-add-try
+  (irid-mak try1 try2)
+  (mkwffif wff (try-get-wff try1)(try-get-wff try2))
+  (deplist-union4id (deplist_of_tries-del-wff wff (try-get-deplist try1))
+                    (deplist_of_tries-del-wff (mknot wff)
+                                              (try-get-deplist try2)))
+  (get-good-below try1 try2)
+  (reason-mak 'WFFIFI
+              (ras3-mak (wff_ra-mak wff)
+                        (try_ra-mak try1)
+                        (try_ra-mak try2)))))

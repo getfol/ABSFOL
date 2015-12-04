@@ -1,0 +1,87 @@
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: MAPBACK                                                  *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   MAPBACK ALT{ ALPHABET | FACT | PROOF } by <abstractionname> ;    *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   MAPBACK ALPHABET maps back all the abstract alphabet into the    *
+;*   ground context. Checks are made to verify that abstract context  *
+;*   is the current one.                                              *
+;*                                                                    *
+;*   MAPBACK FACT maps back fact. The alphabet must be already        *
+;*   declared in the ground space, so before calling this             *
+;*   command make sure to map back the alphabet.                      *
+;*                                                                    *
+;*   MAPBACK PROOF maps back the whole abstract proof.                *
+;*                                                                    *
+;*  NOTE                                                              *
+;*   When mapping back, the argument must be a valid reference to a   *
+;*   fact in the current proof.                                       *
+;*   The new try is declared in the current outline of the ground     *
+;*   space.                                                           *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM MAPBACK# () 
+ (IF (TKC@ 'ALPHABET)
+  (MAPBACK-ALPHA#)
+  (IF (TKC@ 'PROOF)
+   (MAPBACK-PROOF#)
+   (IF (TKC@ 'FACT)
+    (MAPBACK-FACT#)
+    (FERRM1 "This is not a legal option for mapback command.")))))
+
+(DEFLAM MAPBACK-ALPHA# () 
+ (MAPBACK-SYMS#
+  (APPEND
+   (cursyms-get 'Indconst)
+   (cursyms-get 'Indpar)
+   (cursyms-get 'Indvar)
+   (cursyms-get 'Sentconst)
+   (cursyms-get 'Sentpar)
+   (cursyms-get 'Funconst)
+   (cursyms-get 'Funpar)
+   (HGKM-DELETE Mostgeneral (cursyms-get 'Predconst))
+   (cursyms-get 'Predpar))))
+
+(DEFLAM MAPBACK-SYMS# (syms)
+ (SEQ
+  (TKC# 'BY "BY")
+   (LET ((absname (ABSNAME#)))
+    (LET ((abstraction (abslist-get-abs absname)))
+     (LET ((absctx (abstraction-get-absctx abstraction)))
+      (IFN (EQ (curcname-get) absctx)
+       (PRINTMES "Abstract context must be the same as current one.")
+       (IF (MTL? syms)
+	(PRINTMES "There is no abstract symbol to map back.")
+        (SEQ
+	 (ENDL)
+	 (mapback-syms abstraction syms)))))))))
+
+(DEFLAM MAPBACK-PROOF# ()
+ (SEQ
+  (TKC# 'BY "BY")
+  (LET ((absname (ABSNAME#)))
+   (LET ((abstraction (abslist-get-abs absname)))
+    (LET ((absctx (abstraction-get-absctx  abstraction)))
+     (IFN (EQ (curcname-get) absctx)
+      (PRINTMES "Abstract context must be the same as current one.")
+      (SEQ
+       (ENDL)
+       (mapback-proof abstraction (curllist-get))
+       (cur-outline-print))))))))
+
+(DEFLAM MAPBACK-FACT# ()
+ (LET ((fact (FACT#)))
+  (SEQ
+   (TKC# 'BY "BY")
+   (LET ((absname (ABSNAME#)))
+    (LET ((abstraction (abslist-get-abs absname)))
+     (LET ((absctx (abstraction-get-absctx abstraction)))
+      (IFN (EQ (curcname-get) absctx)
+       (PRINTMES "Abstract context must be the same as current one.")
+       (SEQ
+	(ENDL)
+	(mapback-fact abstraction fact)))))))))

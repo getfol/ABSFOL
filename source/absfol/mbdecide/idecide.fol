@@ -1,0 +1,13 @@
+(mknewcommand (QUOTE TPTAUT)   (QUOTE FOL) (QUOTE MBDECIDE)
+              (QUOTE TPTAUT#) MTL)
+(mknewcommand (QUOTE TTAUT)    (QUOTE FOL) (QUOTE MBDECIDE)
+              (QUOTE TTAUT#) MTL)
+(mknewcommand (QUOTE TTAUTEQ)  (QUOTE FOL) (QUOTE MBDECIDE)
+              (QUOTE TTAUTEQ#) MTL)
+(mknewcommand (QUOTE TMONAD)   (QUOTE FOL) (QUOTE MBDECIDE)
+              (QUOTE TMONAD#) MTL)
+(mknewcommand (QUOTE TMONADEQ) (QUOTE FOL) (QUOTE MBDECIDE)
+              (QUOTE TMONADEQ#) MTL)
+(mknewcommand (QUOTE TDECIDE) (QUOTE FOL) (QUOTE MBDECIDE)
+              (QUOTE TMONADEQ#) MTL)
+

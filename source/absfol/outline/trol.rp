@@ -1,0 +1,271 @@
+;**********************************************************************
+;*                                                                    *
+;*  This file contains all the code necessary for the management      *
+;*  of outlines and line of outline                                   *
+;*                                                                    *
+;**********************************************************************
+;
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (TRYREP#)                                                        *
+;*   (TRYREP@)                                                        *
+;*   (TRIES@)                                                         *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   <TRYREP>   ::=  ALT [ <TRY> | <TRY>  OPT [ , ] <TRYREP> ]        *
+;*   Given a sequence of tries, separated by an optional comma,       *
+;*   TRYREP@ returns a list  of the tries specified in reversed order.*
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM TRYREP# ()
+ (LET ((tries (TRYREP@)))
+  (IF (IST tries) tries
+   (FERRM0 "This command requires a list of tries."))))
+
+(DEFLAM TRYREP@ ()
+ (LET ((try (TRY@)))
+  (IF (ISF try) FVAL
+   (SEQ
+    (TK@ COMMA)
+    (LCONS try (TRYREP@))))))
+
+(DEFLAM TRIES@ ()
+ (LET ((try (TRY@)))
+  (IF (IST try) (LIST try) FVAL)))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (TRY#)                                                           *
+;*   (TRY@)                                                           *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   <TRY>        ::=  ALT [ <ID> | <AXIOMLABEL> ]                    *
+;*                                                                    *
+;*   The function TRYAXREF@ read an <AXIOMLABEL> and return a try.    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM TRY# ()
+ (LET ((try (TRY@)))
+  (IF (IST try) try
+   (REMSG1 "The reference to a try"))))
+
+(DEFLAM TRY@ ()
+ (LET ((axiom (TRYAXREF@)))
+  (IF (IST axiom) axiom
+   (LET ((tryref (TRYREF@)))
+    (IF (IST tryref) tryref FVAL)))))
+
+(DEFLAM TRYAXREF@ ()
+ (LET ((S (SCANSTATUS-GET)))
+  (LET ((AXLABEL (FOLSYM@)))
+   (IF (ISF AXLABEL) FVAL
+    (LET ((AXIOM (axioms-get-axiom AXLABEL) ))
+     (IF (ISF AXIOM) (SEQ (SCANSTATUS-RESTORE S) FVAL)
+      (LET ((WTSUBSTREP (WTSUBSTREP@) ))
+       (IF (ISF WTSUBSTREP)
+	(try-mak
+	 (asid-mak)
+	 (axiom-get-wff AXIOM)
+	 Emptydeplist
+	 (starbel-mak)
+	 (reason-mak 'AXIOM (ras1-mak (axiom_ra-mak AXIOM))))
+	(try-mak
+	 (asid-mak)
+	 (wfftrmsubst (axiom-get-wff AXIOM) WTSUBSTREP MTL)
+	 Emptydeplist
+	 (starbel-mak)
+	 (reason-mak 'AXIOMINSTANTIATION
+		     (ras1-mak
+		      (axiomschema_ra-mak 
+                       (CONS (axiom-get-label AXIOM)
+                             WTSUBSTREP)))))))))))))
+
+(DEFLAM TRYREF@ ()
+ (LET ((id (ID@)))
+  (IF (ISF id) FVAL
+   (LET ((try (curtrylist-get-try id)))
+    (IF (IST try) try FVAL)))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (WFF_OR_TRY#)                                                    *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   This parsing routine is used because commands sometimes may      *
+;*   allow the user to use different options (i.e. wff or try).       *
+;*                                                                    *
+;*  NOTE:                                                             *
+;*   wffs are parsed before tries because otherwise we could have     *
+;*   ambiguity.                                                       *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM WFF_OR_TRY# ()
+ (LET ((wff (WFF@)))
+  (IF (IST wff) wff
+   (LET ((try (TRY@)))
+    (IF (IST try) (try-get-wff try)
+     (REMSG2 "This command" "a wff or a try"))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (OLLINEREF#)                                                     *
+;*   (OLLINEREF@)                                                     *
+;*   (OLLINELABELREF#)                                                *
+;*   (OLLINELABELREF@)                                                *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   OLLINEREF* parses an <id> outline reference and return the       *
+;*   corresponding outline line;                                      *
+;*   OLLINELABELREF* parses a <label> reference and return the        *
+;*   corresponding outline line.                                      *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM OLLINEREF# ()
+ (REQ# (QUOTE OLLINEREF@) "The scanner" "an outline line reference"))
+
+(DEFLAM OLLINEREF@ ()
+ (LET ((id (ID@)))
+  (IF (IST id) (curtrylist-get-try id) FVAL)))
+
+(DEFLAM OLLINELABELREF# ()
+ (REQ# (QUOTE OLLINELABELREF@) "The scanner" "an outline label reference"))
+
+(DEFLAM OLLINELABELREF@ ()
+ (LET ((S (SCANSTATUS-GET)))
+  (LET ((LABEL (FOLSYM@)))
+   (IFN (IST LABEL) FVAL
+    (LET ((LABTRY (curtlabel-get-labtry LABEL)))
+     (IFN (IST LABTRY)
+      (SEQ
+       (SCANSTATUS-RESTORE S)
+       FVAL)
+      (curtrylist-get-try (labtry-get-tryname LABTRY))))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (outline-try-print TRY)                                          *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Prints on SELECTED-OUTPUT the <id>, the <wff>, the <matching>,   *
+;*   the <below> and the <reason>.                                    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM outline-try-print (TRY)
+ (SEQ
+  (CRLF)
+  (id-print (try-get-label TRY))(HGKM-PRINC "  ")
+  (printexp (try-get-wff TRY))(HGKM-PRINC "  ")
+  (id-print (try-get-below TRY))(CRLF)
+  (HGKM-PRINC "       ")(reason-print (try-get-reason TRY))
+  (CRLF)))
+ 
+(DEFLAM reason-print (reason)
+ (SEQ
+  (rule-print (reason-get-rule reason))
+  (HGKM-PRINC "  ")
+  (ras-print  (reason-get-ras reason))))
+
+(DEFSUB rule-print (rule) (HGKM-PRINC rule))
+
+(DEFLAM ras-print (ras)
+ (IF (MTL? (ras-get-rest ras))
+  (ra-print (ras-get-first ras))
+  (SEQ
+   (ra-print (ras-get-first ras))(HGKM-PRINC "  ")
+   (ras-print (ras-get-rest ras)))))
+
+(DEFLAM ra-print (ra)
+ (LET ((value (ra-get-value ra)))
+  (IF (OR (FACT_RA ra) (FACTAND_RA ra) (TRY_RA ra))
+   (id-print value)
+   (IF (AXIOM_RA ra)
+    (HGKM-PRINC value)
+    (IF (AXIOMSCHEMA_RA ra)
+     (HGKM-PRINC (CAR value))
+     (IF (OR (EXP_RA ra) (WFF_RA ra))
+      (printexp value)
+      (IF (OR (INDCONST_RA ra) (TERM_RA ra))
+       (printexp value)
+       (IF (TERMS_RA ra)
+        (printargs value)))))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (trylabel-print TRYLABEL)                                        *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Prints on SELECTED-OUTPUT the <trylabel>.                        *
+;*   <trylabel> ::= < <label> . <tryname> >                           *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM trylabel-print (TRYLABEL)
+ (SEQ
+  (CRLF)
+  (HGKM-PRINC (labtry-get-ollabel TRYLABEL))
+  (HGKM-PRINC "   ")
+  (id-print (labtry-get-tryname TRYLABEL))
+  (CRLF)))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX                                                            *
+;*   (tries-print-premises TRYIDLIST DEPTH MAX)                       *
+;*   (try-premise-print tryid depth)                                  *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   tries-print-premises recursively prints the premises of the      *
+;*   elements of TRYIDLIST.                                           *
+;*   The second one prints the try at level depthh of the TRYID.      *
+;*   The tree is truncated at the level MAX. If the level of MAX is   *
+;*   All then all the tree is printed.                                *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM tries-print-premises (TRIES DEPTH MAX)
+ (IF (AND (INTEGER? MAX)(GT DEPTH MAX)) (NOP)
+  (IF (MTL? TRIES) (NOP)
+   (SEQ
+    (try-premise-print (FIRST TRIES) DEPTH)
+    (tries-print-premises (try-get-premises (FIRST TRIES))(ADD1 DEPTH) MAX)
+    (tries-print-premises (REST TRIES) DEPTH MAX)))))
+
+(DEFLAM try-premise-print (tryid DEPTH)
+ (IF (LE DEPTH 0)
+  (IF (AXLABEL? (id-get-left tryid))
+   (try-axiom-print (axioms-get-axiom (id-get-left tryid)))
+   (try-print (curtrylist-get-try tryid)))
+  (SEQ
+   (HGKM-PRINC "    ")
+   (try-premise-print tryid (SUB1 DEPTH)))))
+
+(DEFLAM try-axiom-print (axiom)
+ (SEQ
+  (HGKM-PRINC (axiom-get-label axiom))
+  (HGKM-PRINC " ")
+  (printexp (axiom-get-wff axiom))
+  (CRLF)))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (cur-outline-print)                                              *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Prints on SELECTED-OUTPUT the current outline.                   *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB cur-outline-print ()
+ (MAPCAR 'outline-try-print (ORDER-PAIR-TRY (curtrylist-get))))

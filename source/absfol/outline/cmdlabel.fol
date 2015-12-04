@@ -1,0 +1,41 @@
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: LABEL                                                    *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   LABEL ALT{ TRY <ident> = <id> |                                  *
+;*               FACT ALT{ <ident> | <ident> = <linenum> } }          *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Allows to "name" proof (FACT) lines or tries (TRY) whith         *
+;*   desired GETFOL symbols.                                          *
+;*                                                                    *
+;*  NOTE:                                                             *
+;*   In the case of nameing proof lines if only <ident> is specified  *
+;*   the next line of the current proof the FOL generates will get    *
+;*   the label <ident>, otherwise the <linenum> mentioned will became *
+;*   labeled by  <ident>.                                             *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM LABEL# ()
+ (IF (TKC@ 'FACT)
+  (LET ((X (LABELFACT#)))  (SEQ (ENDL) (curlabels-add X)))
+  (IF (TKC@ 'TRY)
+   (LET ((X (LABELTRY#)))  (SEQ (ENDL) (curtlabel-add X)))
+   (FERRM0 "LABEL requires FACT or TRY here."))))
+
+(DEFLAM LABELFACT# ()
+ (LET ((LABEL (FOLSYM# "LABEL FACT")))
+  (IF (TK@ EQUAL)
+   (LET ((LINE (NATNUM# (QUOTE "LABEL command"))))
+    (labfact-mak LABEL LINE))
+   (labfact-mak LABEL (curnline-get)))))
+
+(DEFLAM LABELTRY# ()
+ (LET ((LABEL (FOLSYM# "LABEL TRY")))
+  (SEQ
+   (TKC# EQUAL "An =")
+   (LET ((LINE (ID#)))
+    (labtry-mak LABEL LINE)))))

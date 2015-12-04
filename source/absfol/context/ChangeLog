@@ -1,0 +1,14 @@
+Thu Nov 17 13:19:28 1994  Marco Roveri  <marco@skolem.mrg.dist.unige.it>
+
+        * context.hgk: Modificato derinizione di context-mak-empty da
+        DEFSUB a DEFLAM, per rendere attive le modifiche.
+
+Wed Nov 16 18:30:41 1994  Marco Roveri  <marco@frege.mrg.dist.unige.it>
+
+        * context.cfg: aggiunti i module add file per i files contenenti
+        le riddefinizioni di alcune funzioni dei contexti.
+
+        * context.hgk: modificata la definizione di context-mak da DEFSUB
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione
+        context-mak fatta in abcontext.hgk abbia effetto.
+

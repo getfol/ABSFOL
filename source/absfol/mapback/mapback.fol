@@ -1,0 +1,72 @@
+;**********************************************************************
+;*                                                                    *
+;*  This file contains the high level routines for mapping back.      *
+;*                                                                    *
+;**********************************************************************
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (mapback-sym abstraction sym)                                    *
+;*   (mapback-syms abstraction syms)                                  *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Maps back symbols from the abstract context to the ground.       *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM mapback-sym (abstraction sym)
+ (LET ((gndctx (abstraction-get-gndctx abstraction))
+       (absctx (abstraction-get-absctx abstraction)))
+  (LET ((rightsym (sym2rightsym sym)))
+   (SEQ
+    (probed-ctext-switch gndctx)
+    (abssym-decl rightsym)
+    (probed-ctext-switch absctx)))))
+
+(DEFLAM mapback-syms (abstraction syms)
+ (LET ((gndctx (abstraction-get-gndctx abstraction))
+       (absctx (abstraction-get-absctx abstraction)))
+   (LET ((rightsyms (syms2rightsyms syms)))
+    (SEQ
+     (probed-ctext-switch gndctx)
+     (MAPCAR 'abssym-decl rightsyms)
+     (probed-ctext-switch absctx)))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (mapback-fact abstraction fact)                                  *
+;*   (mapback-proof abstraction facts)                                *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Maps from the abtract context respectively a fact or a list of   *
+;*   facts.                                                           *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM mapback-fact (abstraction fact)
+ (LET ((gndctx (abstraction-get-gndctx abstraction))
+       (absctx (abstraction-get-absctx abstraction))
+       (abstry (fact2abstry fact (curllist-get)))) 
+  (SEQ
+   (probed-ctext-switch gndctx)
+   (abstry-declare abstry)
+   (probed-ctext-switch absctx))))
+
+(DEFLAM mapback-proof (abstraction facts)
+ (LET ((gndctx (abstraction-get-gndctx abstraction))
+       (absctx (abstraction-get-absctx abstraction)) 
+       (abstry (facts2abstries facts (curllist-get))))
+  (SEQ
+   (probed-ctext-switch gndctx)
+   (MAPCAR 'abstry-declare abstry))))
+
+(DEFLAM abstry-declare (abstry)
+ (LET ((try (abstry2try abstry)))
+  (IF (curtrylist-get-try (try-get-label try))
+   (PRINTMES "This <try> is already declared in the current outline.")
+   (IF (WFF-REC (try-get-wff try))
+    (curtrylist-add-try try)
+    (PRINTMES "Have you mapped back the alphabet?")))))
+

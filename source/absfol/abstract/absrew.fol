@@ -1,0 +1,397 @@
+;*****************************************************************************
+;*                                                                           *
+;* - absrew.fol                                                              *
+;*                                                                           *
+;* This file includes the code to perform the mapping of logical expressions *
+;* Such effort is achieved in four distinct steps, which are performed by    *
+;* distinct groups of routines.                                              *
+;* - 1 a TOP LEVEL GROUP, which performs the mapping of expressions by       *
+;*     supervising the job of the other routines.                            *
+;* - 2 an INTERFACE with GETFOL's unifier (see file amf.fol)                 *
+;* - 3 a recursive TRANSLATER for abs-expressions                            *
+;* - 4 a group of routines performing the application of the MAPS            *
+;* These routine convert a ground expression in a `labelled expression'.     *
+;* A `labelled expression' is an internal rappresentation of a logical       *
+;* espression in which symbols are substituted  with their labels.           *
+;* It is used as a temporary rappresentation of a wff\term belonging         *
+;* to another context, and they are created in order to "pass the frontier"  *
+;* between the ground and abstract contexts.                                 *
+;* After that, you need converting it into the desired abstract expression.  *
+;* Such task is performed by section 5:                                      *
+;* - 5 Convertion of `labelled expressions' into ordinary ones.              *
+;*                                                                           *
+;*****************************************************************************
+
+;*****************************************************************************
+;*                                                                           *
+;* - 1 The top level routines:                                               *
+;*                                                                           *
+;*  Perform the mapping from ground expressions to `labelled expressions'.   *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*                                                                           *
+;*   exp-abstract   -  performs the mapping of an expression                 *
+;*   exps-abstract  -  performs the mapping of a list of expressions         *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM exp-abstract (exp abstraction)
+ (LET ((amf (absrules-get-amf 
+               (flambda-get-absrules (abstraction-get-flambda abstraction)))))
+  (LET ((rr (abs-amf-match exp amf 
+              (flambda-get-absmaps (abstraction-get-flambda abstraction)))))
+   (IFN (MATCH? rr)                 
+    (ERRMES2-printexp "There is no rule matching `" exp "'.")
+    (LET ((rightexp (rr-get-exp rr)))
+     (IF (TERM exp)
+      (absterm-translate rightexp abstraction)
+      (abswff-translate rightexp abstraction)))))))
+
+(DEFLAM exps-abstract (explist abstraction)
+ (IF (MTL? explist)
+  MTL
+  (LCONS (exp-abstract (FIRST explist) abstraction)
+         (exps-abstract (REST explist) abstraction))))
+
+;*****************************************************************************
+;*                                                                           *
+;* - 2  The interface with the system's unifier                              *
+;* From ground expressions to abs-expressions.                               *
+;*                                                                           *
+;* Given a wff\term `exp', it looks for a rule whose left part matches `exp'.*
+;* If the search is successful, it gives back the corresponding              *
+;* abs-expression after substituting unified parameters, otherwise a failure *
+;* value is produced.                                                        *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*                                                                           *
+;*    abs-amf-match       Initializes the global variables and calls         *
+;*                        "abs-expmatch".                                    *
+;*                        BINDINGS  keeps track of the bindings (as in the   *
+;*                        unification algorithm).                            *
+;*                        At first the usual substitutions are made by       *
+;*                        "substbindings", as it's done in amf-match         *
+;*                        (see file `rewrite.fol').                          *
+;*                        Sequently the substitutions inside the symbols     *
+;*                        *MAP[<sym>] are made by the special purpose        *
+;*                        routine "abs-substbindings".                       *
+;*                                                                           *
+;*    abs-substbindings   Makes a sequence of substitutions in absexp.       *
+;*                        binds =  ((<a1> . <b1>) ... (<an> . <bn>)),        *
+;*                        where each occurrence of an <ai> in absexp is      *
+;*                        to be substituted by <bi> inside the symbols       *
+;*                        *MAP[<ai>].                                        *
+;*                        The substitutions are done sequentially starting   *
+;*                        with <a1>.                                         *
+;*                                                                           *
+;*   sym-get-maptype      Given a generic type symbol, it returns the        *
+;*                        type of the map by which it is abstracted.         *
+;*                        For instance, if the predicate `P' is mapped into  *
+;*                        a sentence `A', `(sym-get-maptype P)' will         *
+;*                        return `PSMAP'.                                    *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM abs-amf-match (exp amf absmaps)
+ (SEQ
+  (bindings-ini)
+  (LET ((mp (abs-expmatch exp (amf-get-mtree amf) 1 0)))
+   (IF (MPSUCC mp)
+    (rr-mak-MATCH 
+     (COPY (abs-substbindings 
+            (COPY (substbindings 
+                   (leaf-get-rhs (mpsucc-get-info mp))
+                   (bindings-get)))
+            (bindings-get)
+            absmaps)))
+    (rr-mak-NOSIMP exp)))))
+
+;;; The following functions are necessary because we do not want the
+;;; call to the quantwffmatch of the rewriter, and the compexpmatch of 
+;;; rewriter call recursively the expmatch of the rewriter which calls
+;;; quantwffmatch
+
+(DEFLAM abs-expmatch (exp mtree n i)
+ (IF (SIMPLE exp)
+  (simplexpmatch exp mtree n i)  
+  (abs-compexpmatch exp mtree n i)))
+
+(DEFLAM abs-compexpmatch (exp mtree n i)
+ (LET ((mp (abs-cl-compexpmatch exp (mtree-get-cl mtree) n i)))
+  (IF (MPSUCC mp) mp ;success with clnod
+   (LET ((mp1 (abs-ovl-compexpmatch
+               exp (mtree-get-ovl mtree) n (mpfail-get-int mp))))
+    (IF (MPSUCC mp1) mp1 ; success with ovnod
+     (abs-nvl-compexpmatch exp
+                           (mtree-get-nvl mtree) n (mpfail-get-int mp1)))))))
+
+(DEFLAM abs-args-compexpmatch (args arg mtree j n i)
+ (IF (EQUAL arg (LENGTH args))(abs-expmatch (HGKM-NTH arg args) mtree n i)
+  (LET ((mp (abs-expmatch (HGKM-NTH arg args) mtree j 0)))
+   (IFN (MPSUCC mp) (mpfail-mak 0)
+    (LET ((mp1 (abs-args-compexpmatch
+                args (ADD1 arg)(mpsucc-get-info mp) 1 n i)))
+     (IF (MPSUCC mp1) mp1
+      (abs-args-compexpmatch args
+                             arg mtree (ADD1 j) n (mpfail-get-int mp1))))))))
+
+(DEFLAM abs-cl-compexpmatch (exp clnod n i)
+ (IF (CLNOD-EMPTY? clnod) (mpfail-mak i)
+  (LET ((cnod (clnod-get-cnod clnod (appl-get-functor exp))))
+   (IF (ISF cnod) (mpfail-mak i) ; failure
+    (abs-args-compexpmatch (appl-get-args exp)
+                           1 (cnod-get-info cnod) 1 n i)))))
+
+(DEFLAM abs-ovl-compexpmatch (exp ovlnod n i)
+ (IF (OVLNOD-EMPTY? ovlnod) (mpfail-mak i)
+  (LET ((ovnod   (ovlnod-get-first ovlnod))
+        (ovlnod1 (ovlnod-get-rest  ovlnod)))
+   (LET ((bind (bindings-get-bind (ovnod-get-sym ovnod))))
+    (IFN (OR (PREDPAR (bind-get-new bind))(FUNPAR (bind-get-new bind)))
+     (IF (EQUALEXP exp (bind-get-new bind))
+      (IF (EQUAL n (ADD1 i))  ; succ
+       (mpsucc-mak (ovnod-get-info ovnod))
+       (abs-ovl-compexpmatch exp ovlnod1 n (ADD1 i)))
+      (abs-ovl-compexpmatch exp ovlnod1 n i))
+     (IFN (EQUAL (appl-get-functor exp) (bind-get-new bind))
+      (abs-ovl-compexpmatch exp ovlnod1 n i)
+      (LET ((mp (abs-args-compexpmatch 
+                 (appl-get-args exp) 1 (ovnod-get-info ovnod) 1 n i)))
+       (IF (MPSUCC mp) mp
+        (abs-ovl-compexpmatch exp ovlnod1 n (mpfail-get-int mp))))))))))
+
+(DEFLAM abs-nvl-compexpmatch (exp nvlnod n i)
+ (IF (NVLNOD-EMPTY? nvlnod) (mpfail-mak i)
+  (LET ((nvnod (nvlnod-get-first nvlnod))
+        (nvlnod1 (nvlnod-get-rest nvlnod)))
+   (IFN (OR (PREDPAR (nvnod-get-sym nvnod)) (FUNPAR (nvnod-get-sym nvnod)))
+    (IF (SUPERSORT (sort (nvnod-get-sym nvnod)) exp) 
+     (IF (EQUAL n (ADD1 i)) ;succ
+      (SEQ
+       (bindings-add (bind-mak (nvnod-get-sym nvnod) exp))
+       (mpsucc-mak (nvnod-get-info nvnod)))
+      (abs-nvl-compexpmatch exp nvlnod1 n (ADD1 i)))
+     (abs-nvl-compexpmatch exp nvlnod1 n i))
+    (IFN (AND (OR 
+               (AND (FUNAPPL exp)(FUNPAR (nvnod-get-sym nvnod)))
+               (AND (PREDAPPL exp)(PREDPAR (nvnod-get-sym nvnod))))
+         (EQUAL (arity  (appl-get-functor exp))(arity (nvnod-get-sym nvnod))))
+     (abs-nvl-compexpmatch exp nvlnod1 n i)
+     (SEQ
+      (bindings-add (bind-mak (nvnod-get-sym nvnod) (appl-get-functor exp)))
+      (LET ((mp (abs-args-compexpmatch
+                 (appl-get-args exp) 1 (nvnod-get-info nvnod) 1 n i)))
+       (IF (MPSUCC mp) mp
+        (abs-nvl-compexpmatch exp nvlnod1 n (mpfail-get-int mp))))))))))
+
+     
+(DEFLAM abs-substbindings (absexp binds absmaps)
+ (IF (MTL? binds) absexp
+  (LET ((old (bind-get-old (CAR binds)))
+        (new (bind-get-new (CAR binds))))
+   (IFN (SIMPLE new)
+    (abs-substbindings absexp (CDR binds) absmaps)
+    (LET ((maptype (sym-get-maptype new absmaps)))
+     (LET ((mapold (mapsym-mak maptype old))
+           (mapnew (mapsym-mak maptype new)))
+      (abs-substbindings (SUBST mapnew mapold absexp)
+                         (CDR binds) absmaps)))))))
+
+(DEFLAM sym-get-maptype (sym absmaps)
+ (IF (SIMPSYM sym)
+  (IF (SENTSYM sym) 
+   'SMAP 
+   'IMAP)
+  (IF (PREDSYM sym) 
+    (IF (SIMPRIGHTSYM? (absmaps-get-rightpred sym absmaps))
+     'PSMAP
+     'PMAP)
+    (IF (SIMPRIGHTSYM? (absmaps-get-rightfun sym absmaps))
+     'FIMAP
+     'FUMAP))))
+
+;*****************************************************************************
+;*                                                                           *
+;* - 3  The translater of abs-expressions.                                   *
+;*                                                                           *
+;* This group of routines traslates an abs-expression into the corresponding *
+;* `labelled expression'.                                                    *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*                                                                           *
+;*   absterm-translate       -  Performs the mapping of an absterm.          *
+;*   absterms-translate      -  Performs the mapping of a list of  absterms. *
+;*   abswff-translate        -  Performs the mapping of an abswff.           *
+;*   abswffs-translate       -  Performs the mapping of a list of abswffs.   *
+;*   absawff-translate       -  Performs the mapping of an atomic abswff.    *
+;*   quantabswff-translate   -  Performs the mapping of a quantified abswff. *
+;*   complexabswff-translate -  Performs the mapping of a complex abswff.    *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM absterm-translate (rightexp abstraction)
+ (IF (TABS_APPL? rightexp)            ; rightexp is (TABS <term>)
+  (exp-abstract (TABS_appl-get-exp rightexp) abstraction)
+  (IF (SIMPLE rightexp)
+   (IF (IMAP? rightexp)                      ; rightexp is IMAP[<indsym>]
+    (imap-apply rightexp abstraction)
+    (fumap-apply rightexp abstraction))      ; rightexp is FIMAP[<funsym>]
+   (IF (ABSTERMIF rightexp)
+    (mktrmif                                 ; rightexp is termif (...)
+       (abswff-translate (ifof rightexp) abstraction)
+       (absterm-translate (thenof rightexp) abstraction)
+       (absterm-translate (elseof rightexp) abstraction))
+    (funappl-mak                             ;rightexp is FUMAP[<funsym>](...)
+       (fumap-apply (funappl-get-fun rightexp) abstraction)
+       (absterms-translate (funappl-get-args rightexp) abstraction))))))
+
+(DEFLAM absterms-translate (rightexp-list abstraction) 
+ (IF (MTL? rightexp-list) 
+  MTL 
+  (LCONS 
+    (absterm-translate (FIRST rightexp-list) abstraction)
+    (absterms-translate (REST rightexp-list) abstraction))))
+
+(DEFLAM abswff-translate (rightexp abstraction)
+ (IF (WABS_APPL? rightexp)            ; rightexp is (WABS <wff>)
+  (exp-abstract (WABS_appl-get-exp rightexp) abstraction)
+  (IF (ABSAWFF rightexp)                     ; rightexp is an atomic abswff
+   (absawff-translate rightexp abstraction) 
+   (IF (ABSQUANTWFF rightexp)                ; rightexp is a quantified abswff
+    (absquantwff-translate rightexp abstraction)
+    (complexabswff-translate rightexp abstraction)))))
+
+(DEFLAM abswffs-translate (rightexp-list abstraction) 
+ (IF (MTL? rightexp-list) 
+  MTL 
+  (LCONS 
+    (abswff-translate (FIRST rightexp-list) abstraction)
+    (abswffs-translate (REST rightexp-list) abstraction))))
+
+(DEFLAM absawff-translate (rightexp abstraction)
+ (IF (SIMPLE rightexp)          
+  (IF (SMAP? rightexp)                     ;in the form SMAP[<sentsym>]
+    (smap-apply rightexp abstraction)
+    (pmap-apply rightexp abstraction))    ;in the form PSMAP[<predsym>]
+  (IF (ABSEQU rightexp)
+   (predappl-mak                           ;in the form (... = ...)
+      (appl-get-functor rightexp) 
+      (absterms-translate (predappl-get-args rightexp) abstraction))
+   (predappl-mak                           ;in the form PMAP[<predsym>](...)
+      (pmap-apply (appl-get-functor rightexp) abstraction)
+      (absterms-translate (predappl-get-args rightexp) abstraction)))))
+
+(DEFLAM absquantwff-translate (rightexp abstraction)
+ (mkquant 
+   (quantof rightexp)
+   (absterm-translate (bvarof rightexp) abstraction)
+   (abswff-translate (matrix rightexp) abstraction)))
+
+(DEFLAM complexabswff-translate (rightexp abstraction)
+  (appl-mak
+      (appl-get-functor rightexp)
+      (abswffs-translate (appl-get-args rightexp) abstraction)))
+
+;*****************************************************************************
+;*                                                                           *
+;* - 4  The maps' applier.                                                   *
+;*                                                                           *
+;* This group of routines traslates a ground symbol into the label of the    *
+;* corresponding one according to the abstraction's maps                     *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*    <absmap>-apply  Given a symbol, it gives back the (label fo the)       *
+;*                    corresponding rightsym, according to the abstraction.  *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFSUB smap-apply (mapsent abstraction)
+ (rightsym-get-label
+  (absmaps-get-rightsent 
+    (mapsym2sym mapsent) 
+    (flambda-get-absmaps 
+      (abstraction-get-flambda abstraction)))))
+
+(DEFSUB pmap-apply (mappred abstraction)
+ (rightsym-get-label
+  (absmaps-get-rightpred 
+    (mapsym2sym mappred) 
+    (flambda-get-absmaps 
+      (abstraction-get-flambda abstraction)))))
+
+(DEFSUB fumap-apply (mapfun abstraction)
+ (rightsym-get-label
+  (absmaps-get-rightfun 
+    (mapsym2sym  mapfun)
+    (flambda-get-absmaps 
+      (abstraction-get-flambda abstraction)))))
+
+(DEFSUB imap-apply (mapind abstraction)  
+ (rightsym-get-label
+  (absmaps-get-rightind 
+    (mapsym2sym mapind) 
+    (flambda-get-absmaps 
+      (abstraction-get-flambda abstraction)))))
+
+;*****************************************************************************
+;*                                                                           *
+;* 5 - Routines for handling "labelled-expressions"                          *
+;*                                                                           *
+;*                                                                           *
+;* A `labelled expression' is a temporary data structure giving a ground     *
+;* representation of an  abstract context's wff\term.                        *
+;* It is obtained by an ordinary expression's data structure by substituting *
+;* every simbol with its label.                                              *
+;* Such structures are used to build the mapped expression in the ground     *
+;* context, as no abstract context's symbol can be seen from there.          *
+;* After the context switching, such objects are converted into expressions  *
+;* by the following functions.                                               *
+;* As they help the system to `pass the frontier' between different          *
+;* contexts, they are called also `smuggling data structures'.               *
+;*                                                                           *
+;*  SYNTAX:                                                                  *
+;*     (label2sym      label)                                                *
+;*     (label&sym2sym  label-or-sym)                                         *
+;*     (labexp2exp     labexp)                                               *
+;*     (labexps2exps   labexplist)                                           *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*    label2sym     Converts a label into the corresponding symbol.          *
+;*    label&sym2sym If the argument is a label, it converts it into the      *
+;*                  corresponding symbol, Otherwise it returns the           *
+;*                  argument itself. This routine is necessary, as in        *
+;*                  `labexp2exp' sometimes you have already a symbol         *
+;*                  (es. `#:|imp|'),is not converted by `label2sym'.         *
+;*    labexp2exp    Converts a labelled expression into the corresponding    *
+;*                  expression.                                              *
+;*    labexps2exps  Converts a group of labelled expressions into the        *
+;*                  corresponding expressions.                               *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM label2sym (label) 
+ (ls-get-obj label (symbol-ls)))
+
+(DEFLAM label&sym2sym (label-or-sym) 
+ (LET ((sym (label2sym label-or-sym)))
+  (IF (IST sym) sym label-or-sym)))
+
+(DEFLAM labexp2exp (labexp)
+ (IF (SIMPLE labexp) 
+  (label&sym2sym labexp)
+  (appl-mak 
+     (label&sym2sym (appl-get-functor labexp))
+     (labexps2exps (appl-get-args labexp)))))
+
+(DEFLAM labexps2exps (labexplist) (MAPCAR 'labexp2exp labexplist))
+
+
+
+
+
+
+
+
+
+
+

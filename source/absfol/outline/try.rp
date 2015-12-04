@@ -1,0 +1,110 @@
+;**********************************************************************
+;*                                                                    *
+;*  This file contains the parsing routines for tries.                *
+;*                                                                    *
+;**********************************************************************
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (ID#)                                                            *
+;*   (ID@)                                                            *
+;*   (IDREP#)                                                         *
+;*   (IDREP@)                                                         *
+;*   (NATNUM-XTD@)                                                    *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   <ID>         ::=  <NATNUM-XTD> . <NATNUM-XTD>                    *
+;*   <NATNUM-XTD> ::=  NATNUM | 0                                     *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM ID# ()
+ (LET ((label (ID@)))
+  (IF (IST label) label
+   (REMSG1 "The reference to an label"))))
+
+(DEFLAM ID@ ()
+ (LET ((left (NATNUM-XTD@)))
+  (IFN (NATNUM left) FVAL
+   (IF (ISF (TK@ DOT)) FVAL
+    (LET ((right (NATNUM-XTD@)))
+     (IFN (NATNUM right) FVAL
+      (id-mak left right)))))))
+    
+(DEFSUB NATNUM-XTD@ ()
+ (IF (IST (TK@ '0)) 0
+  (LET ((number (NATNUM@)))
+   (IF (IST number) number -1))))
+
+(DEFLAM IDREP# ()
+ (LET ((ids (IDREP@)))
+  (IF (IST ids) ids
+   (FERRM0 "This command requires a list of labels"))))
+
+(DEFLAM IDREP@ ()
+ (LET ((id (ID@)))
+  (IF (ISF id) MTL
+   (SEQ
+    (TK@ COMMA)
+    (LCONS id (IDREP@))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (id-print label)                                                 *
+;*   (id-deplist-print DEPLIST)                                       *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Prints on SELECTED-OUTPUT respectively an <id> and a list        *
+;*   of <id>s.                                                        *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM id-print (label)
+ (IF (NO-BELOW? label)
+  (HGKM-PRINC "nobelow")
+  (IF (STAR-BELOW? label)
+   (HGKM-PRINC "*.*")
+   (SEQ
+    (HGKM-PRINC (id-get-left label))
+    (HGKM-PRINC ".")
+    (HGKM-PRINC (id-get-right label))))))
+
+(DEFSUB id-deplist-print (deplist)
+ (SEQ
+  (HGKM-PRINC "(")
+  (id-deplist-print-rec deplist)
+  (HGKM-PRINC ")")))
+
+(DEFLAM id-deplist-print-rec (deplist)
+ (IFN (MTL? (deplist-get-2nd deplist))
+  (SEQ
+   (id-print (deplist-get-1st deplist))
+   (HGKM-PRINC "   ")
+   (id-deplist-print-rec (deplist-get-2nd deplist)))
+  (SEQ
+   (id-print (deplist-get-1st deplist)))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (try-print TRY)                                                  *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Prints on SELECTED-OUTPUT the <id>, <wff>, <deplist>, <below> of *
+;*   TRY.                                                             *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM try-print (TRY)
+ (SEQ
+  (id-print (try-get-label TRY))
+  (HGKM-PRINC "  ")
+  (printexp (try-get-wff TRY))
+  (HGKM-PRINC "  ")
+  (IF (MTL? (try-get-deplist TRY)) (NOP)
+   (id-deplist-print (try-get-deplist TRY)))
+  (HGKM-PRINC "  ")
+  (id-print (try-get-below TRY))
+  (CRLF)))

@@ -1,0 +1,473 @@
+;*****************************************************************************
+;*                                                                           *
+;*   declabs.hgk       HANDLING ABSTRACTIONS                                 *
+;*                                                                           *
+;*  This file includes:                                                      *
+;*   1. all the  costructors, destructors and predicates for                 *
+;*      ABSTRACTIONS and their components.                                   *
+;*   2. all the  costructors, destructors and predicates for                 *
+;*      ABSTRACTION PROTOTYPES and their components.                         *
+;*   3. all the costructors, destructors and predicates for handling the     *
+;*      global ABSTRACTIONS' list.                                           *
+;*   4. all the costructors, destructors and predicates for handling the     *
+;*      global ABSTRACTION PROTOTYPES' list.                                 *
+;*                                                                           *
+;*  All the constructors, destructors and predicates for `rightsyms'         *
+;*  and `abstract expression' can be found in two specific files             *
+;*  (rightsym.hgk and absexp.hgk).                                           *
+;*                                                                           *
+;*                                                                           *
+;*                                                                           *
+;*   <abstraction>        ::= ( <abstraction name> . <abstraction body>)     *
+;*      <abstraction body>  ::= ( <ground context name>                      *
+;*                              <abstract context name>                      *
+;*                              <abstraction kind>                           *
+;*                              <flambda>                                    *
+;*                              <fomega>                                     *
+;*                              <fdelta> )                                   *
+;*                                                                           *
+;*        <abstraction kind>  ::= OPT [TI|TD|TC|PI|PD|PC]                    *
+;*                                                                           *
+;*        <flambda>         ::= ( <absmaps> <absrules> )                     *
+;*          <absmaps>         ::= ( <imap> <smap> <fumap> <pmap> )           *
+;*            <*map>            ::= ( *map-pair_1 ... *map-pair_n )          *
+;*              <*map-pair>       ::= ( *symbol . *rightsymbol )             *
+;*                                                                           *
+;*          <absrules>        ::= ( <list of absrules> <amf> )               *
+;*            <absrule>         ::= ( <term> <abstract term> ) |             *
+;*                                  ( <wff> <abstract wff> )                 *
+;*                                                                           *
+;*        <fomega>          ::= OPT [LAMBDAOMEGA]                            *
+;*                                                                           *
+;*        <fdelta>          ::= OPT [LAMBDADELTA]                            *
+;*                                                                           *
+;*****************************************************************************
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 1 - Costructors, destructors and predicates for an abstraction            *
+;*                                                                           *
+;*   <abstraction>        ::= ( <abstraction name> . <abstraction body>)     *
+;*      <abstraction body>  ::= ( <ground context name>                      *
+;*                              <abstract context name>                      *
+;*                              <abstraction kind>                           *
+;*                              <flambda>                                    *
+;*                              <fomega>                                     *
+;*                              <fdelta> )                                   *
+;*                                                                           *
+;* SYNTAX:                                                                   *
+;*   (abstraction-mak      name gndctx absctx flambda fomega fdelta abskind) *
+;*   (abstraction-get-name    abstraction)                                   *
+;*   (abstraction-get-body    abstraction)                                   *
+;*   (abstraction-get-gndctx  abstraction)                                   *
+;*   (abstraction-get-absctx  abstraction)                                   *
+;*   (abstraction-get-flambda abstraction)                                   *
+;*   (abstraction-get-fomega  abstraction)                                   *
+;*   (abstraction-get-fdelta  abstraction)                                   *
+;*   (abstraction-get-abskind abstraction)                                   *
+;*   (LAMBDAOMEGA?            abstraction)                                   *
+;*   (LAMBDADELTA?            abstraction)                                   *
+;*                                                                           *
+;* DESCRIPTION:                                                              *
+;*     abstraction-mak          builds an abstraction                        *
+;*     abstraction-get-name     gets the name of an abstraction              *
+;*     abstraction-get-body     gets the whole body of an abstraction        *
+;*     abstraction-get-gndctx   gets the ground context of an abstraction    *
+;*     abstraction-get-absctx   gets the abstract context of an abstraction  *
+;*     abstraction-get-flambda  gets the language map  of an abstraction     *
+;*     abstraction-get-fomega   gets the axiom map of an abstraction         *
+;*     abstraction-get-fdelta   gets the inference rule map of an abstraction*
+;*     abstraction-get-abskind  gets the abskind  of an abstraction          *
+;*     LAMBDAOMEGA?             is it Lambda\Omega-invariant abstraction?    *
+;*     LAMBDADELTA?             is it Lambda\Delta-invariant abstraction?    *
+;*                                                                           *
+;*****************************************************************************
+
+
+(DEFSUB abstraction-mak (name gndctx absctx  abskind flambda fomega fdelta)
+   (alistelement-mak name (LIST gndctx absctx abskind flambda fomega fdelta)))
+
+(DEFSUB abstraction-get-name   (abstraction) 
+        (alistelement-get-1st abstraction))
+(DEFSUB abstraction-get-body   (abstraction) 
+        (alistelement-get-2nd abstraction))
+
+(DEFSUB abstraction-get-gndctx  (abstraction) 
+        (HGKM-NTH 1 (alistelement-get-2nd abstraction)))
+(DEFSUB abstraction-get-absctx  (abstraction) 
+        (HGKM-NTH 2 (alistelement-get-2nd abstraction)))
+(DEFSUB abstraction-get-abskind (abstraction)                                
+        (HGKM-NTH 3 (alistelement-get-2nd abstraction)))
+(DEFSUB abstraction-get-flambda (abstraction)                                
+        (HGKM-NTH 4 (alistelement-get-2nd abstraction)))
+(DEFSUB abstraction-get-fomega (abstraction)                                
+        (HGKM-NTH 5 (alistelement-get-2nd abstraction)))
+(DEFSUB abstraction-get-fdelta (abstraction)                                
+        (HGKM-NTH 6 (alistelement-get-2nd abstraction)))
+
+
+(DEFSUB LAMBDAOMEGA? (abstraction) 
+                   (EQUAL 'LAMBDAOMEGA (abstraction-get-fomega abstraction)))
+
+(DEFSUB LAMBDADELTA? (abstraction) 
+                   (EQUAL 'LAMBDADELTA (abstraction-get-fdelta abstraction)))
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;*  1.1 Constructors and destructors for abskind                             *
+;*                                                                           *
+;*    <abskind> ::= OPT [TI|TD|TC|PI|PD|PC]                                  *
+;*                                                                           *
+;*                                                                           *
+;*  `abskind' can be seen as supplementary information by which the user     *
+;*  attributes ON HIS OWN RESPONSIBILITY some properties to an abstraction   *
+;*  (es. TI-ness).                                                           *
+;*  Such properties are used to check the applicability of some particular   *
+;*  abstract command. For instance, with `abstract theorem' you can only use *
+;*  truthful abstractions (i.e. TI, TC, PI and PC ones).                     *
+;*                                                                           *
+;*  SYNTAX:                                                                  *
+;*     (empty_abskind)                                                       *
+;*     (<abskind_type>-ABSKIND?      abskind)                                *
+;*     (<abskind_type>-abskind-mak)                                          *
+;*     (<abskind_type>-add-abskind   abskind)                                *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*     empty_abskind                Returns the empty abskind.               *
+;*     <abskind_type>-ABSKIND?      Is this abskind of the required type?    *
+;*     <abskind_type>-abskind-mak   Creates an abskind of the required type. *
+;*     <abskind_type>-add-abskind   Adds some type to an abskind             *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFSUB empty_abskind () MTL)
+
+(DEFSUB PI-ABSKIND? (abskind) (HGKM-MEMBER 'PI abskind))
+
+(DEFSUB TI-ABSKIND? (abskind) (HGKM-MEMBER 'TI abskind))
+
+(DEFSUB PD-ABSKIND? (abskind) (HGKM-MEMBER 'PD abskind))
+
+(DEFSUB TD-ABSKIND? (abskind) (HGKM-MEMBER 'TD abskind))
+
+
+(DEFSUB PC-ABSKIND? (abskind) (AND (PI-ABSKIND? abskind)
+                                   (PD-ABSKIND? abskind)))
+
+(DEFSUB TC-ABSKIND? (abskind) (AND (TI-ABSKIND? abskind)
+                                   (TD-ABSKIND? abskind)))
+
+
+(DEFSUB PI-abskind-mak () (LIST 'PI 'TI))
+(DEFSUB TI-abskind-mak () (LIST 'TI))
+
+(DEFSUB PD-abskind-mak () (LIST 'PD 'TD))
+(DEFSUB TD-abskind-mak () (LIST 'TD))
+
+(DEFSUB PC-abskind-mak () (LIST 'PI 'TI 'PD 'TD))
+(DEFSUB TC-abskind-mak () (LIST 'TI 'TD))
+
+
+
+(DEFSUB PI-add-abskind (abskind)
+ (IF (PI-ABSKIND? abskind)
+  abskind
+  (IF (TI-ABSKIND? abskind)
+   (LCONS 'PI abskind)
+   (APPEND (LIST 'PI 'TI) abskind))))
+
+(DEFSUB TI-add-abskind (abskind)
+ (IF (TI-ABSKIND? abskind)
+  abskind
+  (LCONS 'TI abskind)))
+
+
+(DEFSUB PD-add-abskind (abskind)
+ (IF (PD-ABSKIND? abskind)
+  abskind
+  (IF (TI-ABSKIND? abskind)
+   (LCONS 'PD abskind)
+   (APPEND (LIST 'PD 'TI) abskind))))
+
+(DEFSUB TD-add-abskind (abskind)
+ (IF (TD-ABSKIND? abskind)
+  abskind
+  (LCONS 'TD abskind)))
+
+
+(DEFSUB TC-add-abskind (abskind)
+ (TI-add-abskind (TD-add-abskind abskind)))
+
+(DEFSUB PC-add-abskind (abskind)
+ (PI-add-abskind (PD-add-abskind abskind)))
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 1.2 - Costructors and destructors for flambda.                            *
+;*                                                                           *
+;*  <flambda> ::= (<absmaps> <absrules>)                                     *
+;*                                                                           *
+;*                                                                           *
+;* SYNTAX:                                                                   *
+;*     (flambda-mak             (absmaps absrules)                           *
+;*     (flambda-get-absmaps     (flambda)                                    *
+;*     (flambda-get-absrules    (flambda)                                    *
+;*                                                                           *
+;* DESCRIPTION:                                                              *
+;*     flambda-mak             builds flambda)                               *
+;*     flambda-get-absmaps     gets the alphabet map                         *
+;*     flambda-get-absrules    gets the structure map                        *
+;*                                                                           *
+;*  NOTE:  All the constructors, destructors and predicates for handling     *
+;*         the internal components of flambda can be found in `flambda.hgk'. *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFSUB flambda-mak (absmaps absrules) (LIST absmaps absrules))
+
+(DEFSUB flambda-get-absmaps  (flambda) (FIRST flambda))
+(DEFSUB flambda-get-absrules (flambda) (SECOND flambda))
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 1.2.1 Constructors and destructors of `absmaps' and single `mappairs'.    *
+;*                                                                           *
+;*   By "absmaps" we mean the list of the 4 different absmaps                *
+;*   a single absmap is a list of abspairs of the same kind                  *
+;*   i.e. imap, smap, fumap, pmap                                            *
+;*   (Individuals, Sentences, FUnctions, Predicates).                        *
+;*                                                                           *
+;*    <absmaps> ::= ( <imap> <smap> <fumap> <pmap> )                         *
+;*      <*map>    ::= ( <*mappair>_1 ... <*mappair>_n )                      *
+;*        <mappair> ::= ( <leftsym> . <rightsym> )                           *
+;*          <leftsym> ::= <sym>                                              *
+;*                                                                           *
+;*  for `RIGHTSYM' see file rightsyms.hgk                                    *
+;*                                                                           *
+;*                                                                           *
+;* SYNTAX:                                                                   *
+;*    (absmaps-mak           imap smap fumap pmap)                           *
+;*    (absmaps-get-*map      absmaps)                                        *
+;*                                                                           *
+;*    (mappair-mak           sym abssym)                                     *
+;*    (mappair-get-leftsym   map)                                            *
+;*    (mappair-get-rightsym  map)                                            *
+;*                                                                           *
+;* DESCRIPTION:                                                              *
+;*    absmaps-mak            builds absmaps                                  *
+;*    absmaps-get-*map       each gives back its proper absmap               *
+;*                                                                           *
+;*    mappair-mak            builds a single mappair                         *
+;*    mappair-get-leftsym    gets the ground symbol of a mappair             *
+;*    mappair-get-rightsym   gets the rightsym of a mappair                  *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFSUB absmaps-mak (imap smap fumap pmap) (LIST imap smap fumap pmap))
+
+(DEFSUB absmaps-get-imap  (absmaps) (FIRST  absmaps))
+(DEFSUB absmaps-get-smap  (absmaps) (HGKM-NTH 2 absmaps))
+(DEFSUB absmaps-get-fumap (absmaps) (HGKM-NTH 3 absmaps))
+(DEFSUB absmaps-get-pmap  (absmaps) (HGKM-NTH 4 absmaps))
+
+
+(DEFLAM mappair-mak (sym abssym) (CONS sym abssym))
+(DEFLAM mappair-get-leftsym (map) (CAR map))
+(DEFLAM mappair-get-rightsym (map) (CDR map))
+
+
+
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 1.2.1 Constructors and destructors of absrules.                           *
+;*                                                                           *
+;* <absrules> ::= ( <list of absrules> <amf> )                               *
+;* <absrule>  ::= ( <term>  <abstract-term> ) |                              *
+;*                ( <wff>   <abstract-wff> )                                 *
+;*                                                                           *
+;*  <abstract-term>  \ see file absexp.hgk                                   *
+;*  <abstract-wff>   /                                                       *
+;*                                                                           *
+;*                                                                           *
+;* SYNTAX:                                                                   *
+;*    (absrules-mak       rules)                                             *
+;*    (absrules-get-rules absrules)                                          *
+;*    (absrules-get-amf   absrules)                                          *
+;*    (emptyabsrules)                                                        *
+;*    (absrule-mak        leftexp rightabsexp)                               *
+;*    (absrule-get-left   absrule)                                           *
+;*    (absrule-get-right  absrule)                                           *
+;*                                                                           *
+;* DESCRIPTION:                                                              *
+;*    absrules-mak        builds the whole structure of rules                *
+;*    absrules-get-rules  gets the list of absrules                          *
+;*    absrules-get-amf    gets the amf                                       *
+;*    emptyabsrules       returns an empty structure of rules                *
+;*    absrule-mak         builds a single absrule                            *
+;*    absrule-get-left    gets the left part of an absrule (expression)      *
+;*    absrule-get-right   gets the right part of an absrule (abs-expression) *
+;*                                                                           *
+;*****************************************************************************
+
+
+(DEFSUB absrules-mak (rules) (LIST rules (absrules2amf rules)))
+
+(DEFSUB absrules-get-rules (absrules) (FIRST absrules))
+(DEFSUB absrules-get-amf (absrules) (SECOND absrules))
+
+(DEFSUB emptyabsrules () (absrules-mak MTL))
+
+(DEFSUB absrule-mak (leftexp rightabsexp) (LIST leftexp rightabsexp))
+
+(DEFSUB absrule-get-left  (absrule) (FIRST absrule))
+(DEFSUB absrule-get-right (absrule) (SECOND absrule))
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 2 - Costructors and destructors for an abstraction protype                *
+;*                                                                           *
+;*    <abstype>           ::= ( <abstraction name> . <abstraction body>)     *
+;*      <abstype BODY>      ::= <absrules>                                   *
+;*        <absrules >         ::= ( <list of absrules> <amf> )               *
+;*          <absrule>         ::= ( <term> <abstract term> ) |               *
+;*                              ( <wff> <abstract wff> )                     *
+;*          <amf>             ::= [See files amf.fol, amf.hgk.]              *
+;*                                                                           *
+;*                                                                           *
+;* SYNTAX:                                                                   *
+;*   (abstype-mak             name absrules)                                 *
+;*   (abstype-get-name        abstype)                                       *
+;*   (abstype-get-body        abstype)                                       *
+;*   (abstype-get-absrules    abstype)                                       *
+;*                                                                           *
+;* DESCRIPTION:                                                              *
+;*     abstype-mak            builds an abstype                              *
+;*     abstype-get-name       gets the name of an abstype                    *
+;*     abstype-get-body       gets the whole body of an abstype              *
+;*     abstype-get-absrules   gets the whole rule structure of an abstype    *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFSUB abstype-mak (name absrules) (CONS name absrules))
+
+(DEFSUB abstype-get-name (abstype) (CAR abstype))
+(DEFSUB abstype-get-body (abstype) (CDR abstype))
+
+(DEFSUB abstype-get-absrules (abstype) (CDR abstype))
+
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 3 - handling the global list `%ABSLIST%' of abstractions:                 *
+;*     constructors, destructors and predicates.                             *
+;*                                                                           *
+;*                                                                           *
+;* SYNTAX:                                                                   *
+;*     (abslist-get)                                                         *
+;*     (abslist-reset)                                                       *
+;*     (abslist-del-abs    absname)                                          *
+;*     (abslist-get-abs    absname)                                          *
+;*     (abslist-add-abs    abstraction)                                      *
+;*     (ABS-NAME?          absname)                                          *
+;*                                                                           *
+;* DESCRIPTION:                                                              *
+;*     abslist-get        returns the whole %ABSLIST%                        *
+;*     abslist-reset      resets the whole %ABSLIST%                         *
+;*     abslist-del-abs    removes abs from %ABSLIST%                         *
+;*     abslist-get-abs    takes abs from %ABSLIST%                           *
+;*     abslist-add-abs    adds abs to %ABSLIST%                              *
+;*     ABS-NAME?          is an abstraction name?                            *
+;*                                                                           *
+;*****************************************************************************
+
+
+(DEFSUB abslist-get () %ABSLIST%)
+
+(DEFSUB abslist-reset () (SETQ %ABSLIST% MTL))
+
+(DEFSUB abslist-del-abs (absname) 
+                             (SETQ %ABSLIST% (alist-del %ABSLIST% absname)))
+
+(DEFSUB abslist-get-abs (absname) (HGKM-ASSOC absname %ABSLIST%))
+
+(DEFSUB abslist-add-abs (abs) 
+   (SETQ %ABSLIST% (alist-add %ABSLIST% 
+                            (abstraction-get-name abs)
+                            (abstraction-get-body abs))))
+
+(DEFSUB ABS-NAME? (absname) (IST (abslist-get-abs absname)))
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 2 - handling the global list `%ABSTYPELIST%' of abstraction prototypes:   *
+;*     constructors, destructors and predicates.                             *
+;*                                                                           *
+;*                                                                           *
+;* SYNTAX:                                                                   *
+;*     (abstypelist-get)                                                     *
+;*     (abstypelist-reset)                                                   *
+;*     (abstypelist-del-abstype    abstypename)                              *
+;*     (abstypelist-get-abstype    abstypename)                              *
+;*     (abstypelist-add-abstype    abstype)                                  *
+;*     (ABSTYPE-NAME?              abstypename)                              *
+;*                                                                           *
+;* DESCRIPTION:                                                              *
+;*     abstypelist-get            returns the whole %ABSTYPELIST%            *
+;*     abstypelist-reset          resets the whole %ABSTYPELIST%             *
+;*     abstypelist-del-abstype    removes abstype from %ABSTYPELIST%         *
+;*     abstypelist-get-abstype    takes abstype from %ABSTYPELIST%           *
+;*     abstypelist-add-abstype    adds abstype to %ABSTYPELIST%              *
+;*     ABS-NAME?                  is an abstraction name?                    *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFSUB abstypelist-get () %ABSTYPELIST%)
+
+(DEFSUB abstypelist-reset () (SETQ %ABSTYPELIST% MTL))
+
+
+;adds abstype to %ABSTYPELIST%
+(DEFLAM abstypelist-add-abstype (abstype) 
+ (SETQ %ABSTYPELIST% 
+   (alist-add %ABSTYPELIST% 
+              (abstype-get-name abstype)
+              (abstype-get-body abstype))))
+
+
+(DEFLAM abstypelist-del-abstype (abstypename) 
+ (SETQ %ABSTYPELIST% (alist-del %ABSTYPELIST% abstypename)))
+
+(DEFLAM abstypelist-get-abstype (abstypename) 
+ (HGKM-ASSOC abstypename %ABSTYPELIST%))
+                 
+
+(DEFLAM ABSTYPE-NAME? (abstypename) 
+ (IST (abstypelist-get-abstype abstypename)))
+
+
+
+
+
+
+
+
+
+
+
+
+

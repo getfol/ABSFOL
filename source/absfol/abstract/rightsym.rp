@@ -1,0 +1,137 @@
+;*****************************************************************************
+;*                                                                           *
+;*             rightsym.rp   -    Parsing  of `rightsymbols'.                *
+;*                                                                           *
+;*                                                                           *
+;*  These routines allow complex declarations of the right parts of maps,    *
+;*  allowing the user to introduce some new feature of the symbol.           *
+;*                                                                           *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*                                                                           *
+;*  -  RIGHTIND#   parses a the right part of an individual map-pair         *
+;*                                                                           *
+;*  -  RIGHTSENT#  parses a the right part of a sentence map-pair            *
+;*                                                                           *
+;*  -  RIGHTFUN#   parses a the right part of a function map-pair            *
+;*       SINTAX:                                                             *
+;*          <funsym>  OPT [ARITY <natnum>] OPT [<bpinfo>] |                  *
+;*          <indsym> ind                                                     *
+;*                                                                           *
+;*  -  RIGHTPRED#   parses a the right part of a predicate map-pair          *
+;*       SINTAX:                                                             *
+;*          <predsym>  OPT [ARITY <natnum>] OPT [<bpinfo>] |                 *
+;*          <sentsym> sent                                                   *
+;*                                                                           *
+;*****************************************************************************
+
+
+(DEFLAM RIGHTIND# (leftlabel)
+  (LET ((rightlabel (FOLSYM# "The parser")))
+   (LET ((tempsym  (rightind-mak (syntype leftlabel)
+                                 (outnam leftlabel)
+                                 (sort leftlabel)
+                                 (sact leftlabel))))
+    (rightind-mak2 tempsym rightlabel))))
+
+
+(DEFLAM RIGHTSENT# (leftlabel)
+  (LET ((rightlabel (FOLSYM# "The parser")))
+   (LET ((tempsym (rightsent-mak (syntype leftlabel)
+                                 (outnam leftlabel)
+                                 (sact leftlabel))))
+    (rightsent-mak2 tempsym rightlabel))))
+
+
+
+(DEFLAM RIGHTFUN# (leftlabel)
+ (LET ((tempsym  (rightfun-mak (syntype leftlabel)
+                               (outnam leftlabel)
+                               (arity leftlabel)
+                               (fmaps leftlabel)
+                               (sact leftlabel))))
+  (LET ((righttyp (rightfun-get-typ tempsym)))
+   (LET ((rightlabel (FOLSYM# "The parser")))
+    (IF (TKC@ 'IND)
+     (IF (FUNCONST leftlabel)
+      (rightind-mak 
+        'Indconst rightlabel Mostgeneral (indsym_sact-mak rightlabel))
+      (rightind-mak 
+        'Indpar rightlabel Mostgeneral (indsym_sact-mak rightlabel)))
+     (IFN (TKC@ 'ARITY)
+      (LET ((rightarity (rightfun-get-arity tempsym)))
+        (LET ((rightfmaps (fun-default_fmaps-build rightarity)))
+         (LET ((open (TK@ (QUOTE [))))
+          (IFN (IST open)
+           (rightfun-mak2 tempsym rightlabel) 
+           (LET ((rightbpinfo (PREINF#)))
+            (IFN (CORRECT-BPINFO rightbpinfo rightarity)
+             (FERRM0 "Non-unary prefix or non-binary infix")
+             (LET ((rightsact (applsym_sact-mak rightlabel rightbpinfo)))
+              (SEQ
+               (TK# (QUOTE ]) "The parser" "a `]'")
+               (rightfun-mak 
+                  righttyp rightlabel rightarity rightfmaps rightsact)))))))))
+      (LET ((rightarity (NATNUM# "The parser")))
+          (LET ((rightfmaps (fun-default_fmaps-build rightarity)))
+           (LET ((open (TK@ (QUOTE [))))
+            (IFN (IST open)
+              (LET ((rightsact (applsym_sact-mak rightlabel MTL)))
+               (rightfun-mak 
+                   righttyp rightlabel rightarity rightfmaps rightsact))
+              (LET ((rightbpinfo (PREINF#)))
+               (IFN (CORRECT-BPINFO rightbpinfo rightarity)
+                (FERRM0 "Non-unary prefix or non-binary infix")
+                (SEQ
+                 (TK# (QUOTE ]) "The parser" "a `]'")
+                 (LET ((rightsact (applsym_sact-mak rightlabel rightbpinfo)))
+                   (rightfun-mak 
+                        righttyp rightlabel rightarity rightfmaps rightsact)
+                    ))))))))))))))
+        
+        
+
+
+(DEFLAM RIGHTPRED# (leftlabel)
+ (LET ((tempsym (rightpred-mak (syntype leftlabel)
+                                (outnam leftlabel)
+                                (arity leftlabel)
+                                (fmaps leftlabel)
+                                (sact leftlabel))))
+  (LET ((righttyp (rightpred-get-typ tempsym)))
+   (LET ((rightlabel (FOLSYM# "The parser")))
+    (IF (TKC@ 'SENT)
+     (IF (PREDCONST leftlabel)
+      (rightsent-mak 'Sentconst rightlabel (sentsym_sact-mak rightlabel))
+      (rightsent-mak 'Sentpar rightlabel (sentsym_sact-mak rightlabel)))
+     (IFN (TKC@ 'ARITY)
+      (LET ((rightarity (rightpred-get-arity tempsym)))
+        (LET ((rightfmaps (predsym-fmap-build rightarity)))
+         (LET ((open (TK@ (QUOTE [))))
+          (IFN (IST open)
+            (rightpred-mak2 tempsym rightlabel)
+            (LET ((rightbpinfo (PREINF#)))
+             (IFN (CORRECT-BPINFO rightbpinfo rightarity)
+              (FERRM0 "Non-unary prefix or non-binary infix")
+              (LET ((rightsact (applsym_sact-mak rightlabel rightbpinfo)))
+               (SEQ
+                (TK# (QUOTE ]) "The parser" "a `]'")
+                (rightpred-mak
+                   righttyp rightlabel rightarity rightfmaps rightsact)))))))))
+      (LET ((rightarity (NATNUM# "The parser")))
+        (LET ((rightfmaps (predsym-fmap-build rightarity)))
+         (LET ((open (TK@ (QUOTE [))))
+          (IFN (IST open)
+            (LET ((rightsact (applsym_sact-mak rightlabel MTL)))
+             (rightpred-mak
+                    righttyp rightlabel rightarity rightfmaps rightsact))
+            (LET ((rightbpinfo (PREINF#)))
+             (IFN (CORRECT-BPINFO rightbpinfo rightarity)
+              (FERRM0 "Non-unary prefix or non-binary infix")
+              (SEQ
+               (TK# (QUOTE ]) "The parser" "a `]'")
+               (LET ((rightsact (applsym_sact-mak rightlabel rightbpinfo)))
+                  (rightpred-mak
+                         righttyp rightlabel rightarity rightfmaps rightsact)
+                     ))))))))))))))
+

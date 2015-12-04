@@ -1,0 +1,23 @@
+;**********************************************************************
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Display on SELECTED-OUTPUT the current position in the system.   *
+;*                                                                    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM position# ()
+ (SEQ
+  (ENDL)
+  (IF (CURCTEXT-UNNAMED?)
+   (CS-EPRINC1 "You are now using an unnamed context.")
+   (CS-EPRINC2 "You are now using context: " (curcname-get)))
+  (IF (CURPROOF-UNNAMED?)
+   (PROOF-EPRINC1 "You are now using an unnamed proof.")
+   (PROOF-EPRINC2 "You are now using the proof: " (curpname-get)))
+  (IF (CUROUTLINE-UNNAMED?)
+   (OL-EPRINC1 "You are now using an unnamed outline.")
+   (OL-EPRINC2 "You are now using the outline: " (curolname-get)))))
+
+
+

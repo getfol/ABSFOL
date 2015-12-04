@@ -1,0 +1,39 @@
+; *****************************************************************
+; *                                                               *
+; *                       cmdcxt.fol                              *
+; *                                                               *
+; * This file contains the routines for interpreting the commands *
+; * which are related to the                                      *
+; * multi-proof/multi-outline/multi-context operations            *
+; * and to the topic of metatheory (reflection and m-attachment)  *
+; *                                                               *
+; *****************************************************************
+;
+
+;switching context
+; *****************************************************************
+; *                                                               *
+; * SYNTAX                                                        *
+; *      (SWITCHCTX#)                                             *
+; *                                                               *
+; * DESCRIPTION                                                   *
+; *      needed to change the current context to another context  *
+; *                                                               *
+; *****************************************************************
+;
+(DEFLAM SWITCHCTX# ()
+ (IF (CURCTEXT-UNNAMED?)
+  (FERRM0 "The current context has to be named before switching context")
+  (LET ((CNAME (CNAME#)))
+   (IF (CURCTEXT-NAME? CNAME)
+    (CS-EPRINC1 "You are already there: current state not saved.")
+    (SEQ
+     (ENDL)
+     (ctext-switch CNAME)
+     (CS-EPRINC2 "You are now using context: " CNAME)
+     (IFN (CURPROOF-UNNAMED?)
+      (PROOF-EPRINC2 "You are now using proof: " (curpname-get))
+      (PROOF-EPRINC1 "You are switching to a proof with no name."))
+     (IFN (CUROUTLINE-UNNAMED?)
+      (OL-EPRINC2 "You are now using outline: " (curolname-get))
+      (OL-EPRINC1 "You are switching to an outline with no name")))))))

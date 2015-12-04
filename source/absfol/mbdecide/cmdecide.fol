@@ -1,0 +1,131 @@
+;**********************************************************************
+;*                                                                    *
+;*  This  file contains all the routines for building proof steps     *
+;*  through the following decision procedures: PTAUT, TAUT, TAUTEQ,   *
+;*  MONAD, MONADEQ.                                                   *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM TRYHYPOTS@ () (IF (TK2@ 'BY 'by) (TRYREP#) MTL))
+   
+(DEFLAM TPTAUT# ()
+ (LET ((wff (WFF#))(hypots (TRYHYPOTS@)))
+  (SEQ
+   (ENDL)
+   (IF (ptaut (tries_imp_wff-mak wff hypots))
+    (decider-add-try wff hypots 'PTAUT)
+    (TPTAUTMSG wff hypots)))))
+
+(DEFLAM TPTAUTMSG (wff tries)
+ (IF (MTL? tries)
+  (mesexpmes-print "TPTAUT couldn't prove that " wff 
+		   "is a tautology.")
+  (mesexpmes-print "TPTAUT couldn't prove that "  wff
+		   "is a logical consequence of tries.")))
+
+(DEFLAM TTAUT# ()
+ (LET ((wff (WFF#)) (hypots (TRYHYPOTS@)))
+  (SEQ
+   (ENDL)
+   (IF (ptaut (tautren (tries_imp_wff-mak wff hypots)))
+    (decider-add-try wff hypots 'TAUT)
+    (TTAUTMSG wff hypots )))))
+
+(DEFLAM TTAUTMSG (wff tries)
+ (IF (MTL? tries)
+   (mesexpmes-print "TAUT couldn't prove that " wff 
+                    "is a tautology.")
+   (mesexpmes-print "TAUT couldn't prove that " wff
+                    "is a logical consequence of tries.")))
+
+(DEFLAM TTAUTEQ# ()
+ (LET ((wff (WFF#)) (hypots (TRYHYPOTS@)))
+  (SEQ
+   (ENDL)
+   (IF (ptauteq (tautren (tries_imp_wff-mak wff hypots)))
+    (decider-add-try wff hypots 'TAUTEQ)
+    (TTAUTEQMSG wff hypots)))))
+
+(DEFLAM TTAUTEQMSG (wff tries)
+ (IF (MTL? tries)
+  (mesexpmes-print "TAUTEQ couldn't prove that " wff 
+		   "is a tautology.")
+  (mesexpmes-print "TAUTEQ couldn't prove that " wff
+		   "is a logical consequence of tries.")))
+
+(DEFLAM TMONAD# ()
+ (LET ((wff (WFF#)) (hypots (TRYHYPOTS@)))
+  (SEQ
+   (ENDL)
+   (LET ((rewr-list '(nnf reduce skolemize phexp)))
+   (IF (ptaut (rewr-apply rewr-list (tries_imp_wff-mak wff hypots)))
+    (decider-add-try wff hypots 'MONAD)
+    (TMONADMSG wff hypots))))))
+
+(DEFLAM TMONADMSG (wff tries)
+ (IF (MTL? tries)
+   (mesexpmes-print "MONAD couldn't prove that " 
+                     wff 
+                    "is a tautology.")
+   (mesexpmes-print "MONAD couldn't prove that "
+                     wff
+                    "is a logical consequence of tries.")))
+
+(DEFLAM TMONADEQ# ()
+ (LET ((wff (WFF#)) (hypots (TRYHYPOTS@)))
+  (SEQ
+   (ENDL)
+   (LET ((rewr-list '(nnf reduce skolemize phexp)))
+   (IF (ptauteq (rewr-apply rewr-list (tries_imp_wff-mak wff hypots)))
+    (decider-add-try wff hypots 'MONADEQ)
+    (TMONADEQMSG wff hypots))))))
+
+(DEFLAM TMONADEQMSG (wff tries)
+ (IF (MTL? tries)
+   (mesexpmes-print "MONADEQ couldn't prove that " 
+                     wff 
+                    "is a tautology.")
+   (mesexpmes-print "MONADEQ couldn't prove that "
+                     wff
+                    "is a logical consequence of tries.")))
+
+(DEFLAM decider-add-try (wff tries DECIDER)
+ (IF (MTL? tries)
+  (outline-add-try
+   (asid-mak)
+   wff
+   Emptydeplist
+   (starbel-mak)
+   (reason-mak DECIDER
+	       (ras2-mak (wff_ra-mak wff) MTL)))
+  (outline-add-try
+   (pdid-mak tries)
+   wff
+   (tries-union-dep tries)
+   (pdbel-mak tries)
+   (reason-mak DECIDER
+	       (ras2-mak (wff_ra-mak wff)
+			 (tries_ra-mak tries))))))
+
+
+(DEFLAM TDECIDE# ()
+ (LET ((wff (WFF#))
+       (hypots (TRYHYPOTS@))
+       (rewr-list&dec (LIST-OF-PROC#)))
+  (SEQ
+   (ENDL)
+   (IF (tdecide wff hypots (CAR rewr-list&dec) (CDR rewr-list&dec))
+    (decider-add-try wff hypots (CDR rewr-list&dec))
+    (TDECIDEMSG wff hypots (CAR rewr-list&dec) (CDR rewr-list&dec))))))
+
+
+(DEFLAM TDECIDEMSG (wff tries rewrlist decider)
+ (SEQ
+  (HGKM-PRINC decider)
+  (HGKM-PRINC " couldn't prove that ")
+  (IF (MTL? tries)
+   (expmees-print wff " is a tautology using ")
+   (expmees-print wff " is a logical consequence of tries using "))
+  (PRINTLIST rewrlist)
+  (HGKM-PRINC ".")))
+  

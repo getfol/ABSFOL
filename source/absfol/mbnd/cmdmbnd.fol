@@ -1,0 +1,544 @@
+;**********************************************************************
+;*                                                                    *
+;*  This file contains all the scanning and parsing routines for      *
+;*  ND rules working on outline.                                      *
+;*                                                                    *
+;**********************************************************************
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: TRYASSUME                                                *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*     TRYASSUME <wff> REP{ OPT {,} <wff> } ;                         *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*     The TRYASSUME command makes an assumption on a new line of the *
+;*     current outline for each <wff> in the command.                 *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM TRYASSUME# ()
+ (LET ((wffs (WFFREP#)))
+  (SEQ
+   (ENDL)
+   (tryassume-list wffs))))
+
+;**********************************************************************
+;*                                                                    *
+;*   COMMAND: TRYANDI, TAI                                            *
+;*                                                                    *
+;*   SYNTAX:                                                          *
+;*      ALT{ TRYANDI | TAI } <try1> OPT{ , } <try2> ;                 *
+;*                                                                    *
+;*   DESCRIPTION:                                                     *
+;*      TRYANDI adds the cunjunction of try1 and try2 to the current  *
+;*      outline. Checks are made on the below formula of try1 and     *
+;*      try2: they must ave the same below.                           *
+;*      The arguments passed to this function are two label referring *
+;*      to declared tries in the current outline.                     *
+;*                                                                    *
+;*   NOTE:                                                            *
+;*      The syntax of the command is sligthtly different from the     *
+;*      equivalent command (ANDI (AI)) in ND. That is due to the fact *
+;*      that controlling the below of the tries in a command ND like  *
+;*      is impossible, unless to change radically the code and/or to  *
+;*      introduce a global variable.                                  *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM TRYANDI# ()
+ (LET ((try1 (TRY#)))
+  (SEQ
+   (TK@ COMMA)
+   (LET ((try2 (TRY#)))
+    (SEQ 
+     (ENDL)
+     (tryandi try1 try2))))))
+
+;**********************************************************************
+;*                                                                    *
+;*   COMMAND: TRYANDE, TAE                                            *
+;*                                                                    *
+;*   SYNTAX:                                                          *
+;*      ALT{ TRYANDE | TAE } <olab> OPT{ , } <seq_of_natnum> ;        *
+;*                                                                    *
+;*      Where <seq_of_natnum> is a sequence of 1's and 2's  separated *
+;*      with optional commas.                                         *
+;*                                                                    *
+;*   DESCRIPTION:                                                     *
+;*      This command allows the user to pick up am arbitrary          *
+;*      subpart of the <try> labeled by <olab> as long as it is a     *
+;*      conjunction.                                                  *
+;*      1 picks out the first conjuct, 2 picks out the second one.    *
+;*      Any other numebr give error. The dependencies of the result   *
+;*      are the same as those of <olab>.                              *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM TRYANDE# ()
+ (LET ((try (TRY#)))
+  (SEQ
+   (TK@ COMMA)
+   (LET ((list_of_nat (NATNUMREP#)))
+    (SEQ
+     (ENDL)
+     (tryande try list_of_nat))))))
+
+;**********************************************************************
+;*                                                                    *
+;*   COMMAND: TRYORI, TOI                                             *
+;*                                                                    *
+;*   SYNTAX:                                                          *
+;*      ALT{ TRYORI | TOI } <try> OPT{ , } ALT{ <wff> | <try> } ;     *
+;*                          OPT{ RL | LR };                           *
+;*                                                                    *
+;*   DESCRIPTION:                                                     *
+;*      This command aplies OR introduction rule: as in ND.           *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM TRYORI# ()
+ (LET ((try (TRY#)))
+  (SEQ
+   (TK@ COMMA)
+   (LET ((wff (WFF_OR_TRY#)))
+    (SEQ
+     (TK@ COMMA)
+     (LET ((left_right (TK4@ 'lr 'LR 'rl 'RL)))
+      (SEQ
+       (ENDL)
+       (tryori try wff left_right))))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: TRYORE, TOE                                              *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*     ALT{ TRYORE | TOE } <try> OPT{,} <try>1 OPT{,} <try>2  ;       *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*     This command apllies the OR elimination rule, as in ND.        *
+;*     Tries must have the same below.                                *
+;*                                                                    *
+;*  NOTES:                                                            *
+;*     <try> is the <try> on which a disjunction "A or B" appears,    *
+;*     <try>1 and <try>2 are both <try>s such that <try>1 and <try>2  *
+;*     have both the same <wff> C. The conclusion is the <wff> C.     *
+;*     Dependencies of the conclusion are those of <try> along with   *
+;*     those of <try>1 which are not equal to A and those of <try>2   *
+;*     not equal to B.                                                *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM TRYORE# ()
+ (LET ((try1 (TRY#)))
+  (SEQ
+   (TK@ COMMA)
+   (LET ((try2 (TRY#)))
+    (SEQ
+     (TK@ COMMA)
+     (LET ((try3 (TRY#)))
+      (SEQ
+       (ENDL)
+       (tryore try1 try2 try3))))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: TRYFALSEI, TFI                                           *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*     ALT{ TRYFALSEI | TFI } <try>1 OPT{ , } <try>2 ;                *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*     This command applies the FALSE introduction rule.              *
+;*     If <try>1 is of the form A, then <try>2 must be of the form    *
+;*     not A ( or the other way around). The conclusion is the WFF    *
+;*     "FALSE".                                                       *
+;*     The dependencies are the union of teh dependencies of <try>1   *
+;*     and <try>2.                                                    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM TRYFALSEI# ()
+ (LET ((try1 (TRY#)))
+  (SEQ
+   (TK@ COMMA) 
+   (LET ((try2 (TRY#)))
+    (SEQ
+     (ENDL)
+     (tryfalsei try1 try2))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: TRYFALSEE, TFE                                           *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*     ALT{ TRYFALSEE | TFE } <vl> OPT{ , } ALT{ <vl>1 | <wff> } ;    *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*     The <wff> of <vl> must be "FALSE".  A new line is created      *
+;*     with either <vl>1 or the WFF specified by the alternative.     *
+;*     This rule says that anything follows from a contradiction.     *
+;*     The dependencies (there had better be some or your theory      *
+;*     is inconsistant) are just those of <vl>.                       *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM TRYFALSEE# ()
+(LET ((try (TRY#)))
+ (SEQ
+  (TK@ COMMA)
+  (LET ((wff (WFF_OR_TRY#)))
+   (SEQ
+    (ENDL)
+    (tryfalsee try wff))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: TRYNOTI, TNI                                             *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*     ALT{ TRYNOTI | TNI } <vl> OPT{ , } ALT{ <vl>1 | <wff> } ;      *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*     Applies the NOT introduction rule.                             *
+;*     The wff of <vl> must be "FALSE". The conclusion of the rule    *
+;*     is the negation of <vl>1 or the <wff>. The dependencies of     *
+;*     the conclusion are those of <vl> minus the ones (eventually)   *
+;*     equal to <vl>1 or <wff>. Note that (as for NOTE) if <vl>1      *
+;*     or wff are not in the deplist this command actually works      *
+;*     as FALSEE.                                                     *
+;**********************************************************************
+
+(DEFLAM TRYNOTI# ()
+ (LET ((try (TRY#)))
+  (SEQ
+   (TK@ COMMA)
+   (LET ((wff (WFF_OR_TRY#)))
+    (SEQ
+     (ENDL)
+     (trynoti try wff))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: TRYNOTE, TNE                                             *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*     ALT{ TRYNOTE | TNE } <vl> OPT{ , } ALT{ <vl>1 | <wff> } ;      *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*     Aplies the NOTE rule.                                          *
+;*     The <try> of <vl> must be "FALSE". <vl>1 or <wff> must         *
+;*     have "not " as main symbol. That is they must have the form    *
+;*     "not A". The conclusion is A. The dependencies are those of    *
+;*     <vl>, minus any equal to not A.                                *
+;*     This ND system is a variation of Prawitz' one. If this rule    *
+;*     is omitted (or simply not used) and only the False             *
+;*     introduction and elimination rules are used the proof is       *
+;*     intuitionistically valid.                                      *
+;*                                                                    *
+;**********************************************************************
+  
+(DEFLAM TRYNOTE# ()
+ (LET ((try (TRY#)))
+  (SEQ
+   (TK@ COMMA)
+   (LET ((wff (WFF_OR_TRY#)))
+    (SEQ
+     (ENDL)
+     (trynote try wff))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: TRYIMPI, TDED                                            *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*     ALT{ TRYIMPI | TDED }                                          *
+;*         ALT{ <wff> | <try> } OPT{ ALT {imp | , } } <try> ;         *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*     Applies the implication introduction rule.                     *
+;*     The difference between "<wff> imp <try>" and "<try> imp <try>" *
+;*     is in latter case dependencies of the conclusion which are the *
+;*     same as the hypothesis are deleted.                            *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM TRYIMPI# ()
+ (LET ((wff (WFF_OR_TRY#)))
+  (SEQ
+   (TK3@ 'imp 'IMP COMMA)
+   (LET ((try (TRY#)))
+    (SEQ
+     (ENDL)
+     (tryimpi wff try))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: TRYIMPE, TMP                                             *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*     ALT{ TRYIMPE | TMP } <vl> OPT{ , } <vl> ;                      *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*     Applies the IMPLY ELIMINATION rule.                            *
+;*     The order in which the arguments are specified is irrelevant.  *
+;*     This is the classical Modus Ponens.                            *
+;*     The dependencies of the conclusion are the union of the        *
+;*     dependencies of both <vl>s.                                    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM TRYIMPE# ()
+ (LET ((try1 (TRY#)))
+  (SEQ
+   (TK@ COMMA)
+   (LET ((try2 (TRY#)))
+    (SEQ
+     (ENDL)
+     (tryimpe try1 try2))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: TRYIFFI, TII                                             *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*     ALT{ TRYIFFI | TII } <vl>1 OPT{ , } <vl>2 ;                    *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*     Equivalence (iff) introduction rule.                           *
+;*     <vl>1 is of the form A imp B and <vl>2 is of the form          *
+;*     B imp A. The conclusion is A iff B. The dependencies are       *
+;*     the union of the dependencies of <vl>1 and <vl>2.              *
+;*                                                                    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM TRYIFFI# ()
+ (LET ((try1 (TRY#)))
+  (SEQ
+   (TK@ COMMA)
+   (LET ((try2 (TRY#)))
+    (SEQ
+     (ENDL)
+     (tryiffi try1 try2))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: TRYIFFE, TIE                                             *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*     ALT{ TRYIFFE | TIE } <vl> OPT{ , } ALT{ 1 | 2 } ;              *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*     Equivalence (iff) elimination rule.                            *
+;*     If <vl> is of the form A iff B then the first alternative      *
+;*     produces A imp B, the second B imp A.  The dependencies        *
+;*     are those of <vl>.                                             *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM TRYIFFE# ()
+ (LET ((try (TRY#)))
+ (SEQ 
+  (TK@ COMMA)
+  (LET ((NATNUM (NATNUM# "Iff elimination")))
+   (SEQ
+     (ENDL)
+     (tryiffe try NATNUM))))))     
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: TRYALLI, TUG                                             *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*     ALT {TRYALLI | TUG} <try>                                      *
+;*       REP1{ OPT{ OPT{,} ALT {<indvar>|<indpar>} : } <indvar> } ;   *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*     ALL (forall) introduction rule.                                *
+;*     Several simultaneous universal generalizations on <try>>       *
+;*     can be carried out with this command. For each element of      *
+;*     the list (either x or a:x) a new universal quantifier          *
+;*     (forall x) is put at the front of <try>.                       *
+;*                                                                    *
+;*  NOTES:                                                            *
+;*    Remember there is the usual restriction from ND theory          *
+;*    on the application of this rule, namely the                     *
+;*    variable/parameter being replaced must not appear free in       *
+;*    any of the assumptions of which <fact> is a dependency.         *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM TRYALLI# ()
+ (LET ((try (TRY#)))
+  (SEQ
+   (TK@ COMMA)
+   (LET ((substlist (ALLI_SUBSTREP#)))
+    (SEQ 
+     (ENDL)
+     (tryalli try substlist))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: TRYALLE, TUS                                             *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*     ALT{ TRYALLE | TUS } <try> OPT{ , } <termlist> ;               *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*     ALL (forall) elimination rule .                                *
+;*     Universal specialization uses the terms in the <termlist>      *
+;*     to instantiate the universal quantifiers in the order in       *
+;*     which they appear.                                             *
+;*                                                                    *
+;*  NOTES:                                                            *
+;*     If a particular term is not free for the variable to be        *
+;*     instantiated a bound variable change is made and then the      *
+;*     substitution is made. The variable created is declared to      *
+;*     be an INDVAR of the correct SORT.                              *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM TRYALLE# ()
+ (LET ((try (TRY#)))
+  (SEQ 
+   (TK@ COMMA)
+   (LET ((termlist (TERMREP#)))
+    (SEQ
+     (ENDL) 
+     (tryalle try termlist))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: TRYEXISTI, TEG                                           *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*     ALT{ TRYEXISTI | TEG } <try>,                                  *
+;*        REP1{ OPT {,} OPT{ <term> :} <indvar> OPT{<occlist>} ;      *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*     EXISTS (exists) introduction rule.                             *
+;*     In the syntax: <occlist> :=  OCC  <natnumlist>                 *
+;*     any occurrence in <occlist> is substituded by <indvar>.        *
+;*     The list following <try> tells which TERMs are to be           *
+;*     existentialized. If the optional <term> is present, it is      *
+;*     replaced by <indvar> at each occurrence mentioned in the       *
+;*     <occlist> and then  existentialized. If <term> is not          *
+;*     all the occurences of <indvar> are put under the scope of      *
+;*     existential quantifier.                                        *
+;*                                                                    *
+;*  NOTES:                                                            *
+;*     Notice that no use can be made of an <occlist> if there is     *
+;*     no TERM present. The machine will give error in this case.     *
+;*     The dependencies of the conclusion are just those of the <try> *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM TRYEXISTI# ()
+ (LET ((try (TRY#)))
+  (SEQ 
+   (TK@ COMMA)
+   (LET ((termlist (EXISTI_SUBSTREP#)))
+    (SEQ 
+     (TK@ COMMA)
+     (ENDL)
+     (tryexisti try termlist))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: TRYEXISTE, TES                                           *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*     ALT{ TRYEXISTE | ES } <try>                                    *
+;*       REP1{ OPT{ , } ALT{ <indvar>|<indpar> } } ;                  *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*     EXISTS (exists) elimination rule.                              *
+;*     "Exists eliminaion" rule has been implemented in slightly      *
+;*     different way from what the theory says (see manual and        *
+;*     Prawitz' book). The machine implementation makes the correct   *
+;*     assumption for you, remembers it and it automatically          *
+;*     removes it at the first legitimate opportunity. Several        *
+;*     eliminations can be done at once.                              *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM TRYEXISTE# ()
+ (LET ((try (TRY#)))
+  (SEQ 
+   (TK@ COMMA)
+   (LET ((varorparlist (VAR_OR_PARREP#)))
+    (SEQ 
+     (ENDL)
+     (tryexiste try varorparlist))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: TRYSUBST                                                 *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*     TRYSUBST <try1> OPT{ with } <try2> OPT{ occ <integerlist> }    *
+;*        OPT{ ALT{ right | left } } ;                                *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*     where try2 must be the equality "t1 = t2" and try1             *
+;*     may contain one or more not ground occurrences of t1.          *
+;*                                                                    *
+;*     <try1> is the fact in which occurrencies of a ground term      *
+;*            are substituted                                         *
+;*     <try2> is the ground equality that indicates the               *
+;*            substitution                                            *
+;*     <integerlist> is the list of integers indicating the           *
+;*                   occurrences                                      *
+;*                   in which the substitution is performed.          *
+;*                   If no <integerlist> is specified all the         *
+;*                   occurrences are replaced.                        *
+;*     right: indicates the left hand of the equality to be           *
+;*            substituted with the right hand.                        *
+;*     left: indicates the right hand of the equality to be           *
+;*           substituted with the left hand.                          *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM TRYSUBST# ()
+ (LET ((try1 (TRY#)))
+  (SEQ
+   (TK2@ 'WITH 'with)
+   (LET ((try2 (TRY#)))
+    (SEQ 
+     (LET ((intlist (IF (TK2@ 'OCC 'occ) (NATNUMREP#))))
+      (LET ((left_right (TK4@ 'RIGHT 'right 'LEFT 'left)))
+       (SEQ
+	(ENDL)
+	(trysubst try1 try2 intlist left_right)))))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: MATCH                                                    *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   MATCH try1 try2 ;                                                *
+;*                                                                    *
+;*  DESCRIPTION                                                       *
+;*   Connect two tries changing all the deplist of the proof:         *
+;*   every occurence of the try below is substituted with the         *
+;*   deplist of the try above.                                        *
+;*                                                                    *
+;*  NOTE                                                              *
+;*   Several rescription applies to the rule:                         *
+;*    1. try1 must be directly above try2 or viceversa                *
+;*    2. suppose try1 is the try below: try1 can't be matched with    *
+;*       more than a try.                                             *
+;*   This command has side effect on the reason of the try above.     *
+;*                                                                    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM MATCHTRY# ()
+ (LET ((try1 (TRY#)))
+  (SEQ
+   (TK@ COMMA)
+   (LET ( (try2 (TRY#)))
+    (matchtry try1 try2)))))

@@ -1,0 +1,18 @@
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: OL2PRF                                                   *
+;*                                                                    *
+;*  SYNTAX                                                            *
+;*   O2PRF ;                                                          *
+;*                                                                    *
+;*  DESCRIPTION                                                       *
+;*   o2prf attempts to transform an outline into a proof.             *
+;*   The outline being tranformed is the current outline and the      *
+;*   recipient proof is the current one.                              *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM OL2PRF# ()
+ (SEQ
+  (ENDL)
+  (ol2prf)))

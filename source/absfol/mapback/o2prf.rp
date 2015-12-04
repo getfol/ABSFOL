@@ -1,0 +1,10 @@
+(DEFLAM OL2PRF-ERROR1 (try factwff)
+ (SEQ
+  (CRLF)
+  (HGKM-PRINC " ol2prf failed at proof line: ")
+  (HGKM-PRINC (curnline-get)) (HGKM-PRINC "    ")
+  (printexp factwff)(CRLF)
+  (HGKM-PRINC "                    with try: ")
+  (id-print (try-get-label try)) (HGKM-PRINC "  ")
+  (printexp (try-get-wff try))))
+ 

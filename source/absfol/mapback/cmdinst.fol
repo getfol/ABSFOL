@@ -1,0 +1,173 @@
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: INSTS, INSTW ,INSTT                                      *
+;*                                                                    *
+;*  SYNTAX                                                            *
+;*   INSTS ALT[try | everywhere] <sym-pair> <occs-list> by <absname>  *
+;*   INSTW ALT[try | everywhere] <wff-pair> <occs-list> by <absname>  *
+;*   INSTT ALT[try | everywhere] <term-pair> <occs-list> by <absname> *
+;*                                                                    *
+;*     <sym-pair> ::= <left-sym> : <right-sym>                        *
+;*     <wff-pair> ::= <left-wff> : <right-wff>                        *
+;*     <term-pair> ::= <left-term> : <right-term>                     *
+;*                                                                    *
+;*  DESCRIPTION                                                       *
+;*   insts replace the occurences of <left-sym> specified by          *
+;*   <occs-list> with <right-sym> into <try> or in all the tries of   *
+;*   the current outline.                                             *
+;*                                                                    *
+;*  NOTES                                                             *
+;*   Insts has side effects.                                          *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM INSTS# ()
+ (LET ((args (IF (TKC@ 'EVERYWHERE)
+              (ORDER-PAIR-TRY (curtrylist-get))
+              (TRYREP#))))
+  (LET ((sympair (SYMPAIR#)))
+   (LET ((occlist (OCCLIST#)))
+    (SEQ
+     (TKC# 'BY "BY")
+     (LET ((absname (ABSNAME#)))
+      (LET ((abstraction (abslist-get-abs absname)))
+       (ENDL)
+       (insts-list args sympair occlist abstraction))))))))
+ 
+(DEFLAM INSTW# ()
+ (LET ((args (IF (TKC@ 'EVERYWHERE)
+              (ORDER-PAIR-TRY (curtrylist-get))
+              (TRYREP#))))
+  (LET ((wffpair (WFFPAIR#)))
+   (LET ((occlist (OCCLIST#)))
+    (SEQ
+     (TKC# 'BY "BY")
+     (LET ((absname (ABSNAME#)))
+      (LET ((abstraction (abslist-get-abs absname)))
+       (ENDL)
+       (instw-list args wffpair occlist abstraction))))))))
+
+(DEFLAM INSTT# ()
+ (LET ((args (IF (TKC@ 'EVERYWHERE)
+              (ORDER-PAIR-TRY (curtrylist-get))
+              (TRYREP#))))
+  (LET ((termpair (TERMPAIR#)))
+   (LET ((occlist (OCCLIST#)))
+    (SEQ
+     (TKC# 'BY "BY")
+     (LET ((absname (ABSNAME#)))
+      (LET ((abstraction (abslist-get-abs absname)))
+       (ENDL)
+       (instt-list args termpair occlist abstraction))))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   <sym-pair> ::= <ind-pair> | <funpair> | <sppair>                 *
+;*   <indpair>  ::= <leftind> : <rightind>                            *
+;*   <funpair>  ::= <leftfun> : <rightfun>                            *
+;*   <sppair>   ::= <leftsp>  : <rightsppar>                          *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Some restrictions are imposed to the user: the left part and     *
+;*   the right part of a symbols' pair must be of the same type,      *
+;*   because, I don't want to allow arbitrary substitution of         *
+;*   symbols inside a wff.  Note that, even with this control, we     *
+;*   can't assure the resulting formula is well formed (ex.           *
+;*   x:a in forall x.p(x) --> forall a.p(a) (!!))                     *
+;*                                                                    *
+;*  NOTES:                                                            *
+;*   The following parsing routines are very simple: they don't       *
+;*   care to restore the state of the parser if they are called       *
+;*   mistakenly.  Therefore, @ routines can be called only when       *
+;*   parsing unambiguos grammars.  When dealing with ambigous         *
+;*   grammars they may be used, but you are warned, the result        *
+;*   depend on the grammar...                                         *
+;*                                                                    *
+;*   ex: spair | wff | 'all:                                          *
+;*   if the first symbol is a sentencial letter, SPPAIR@              *
+;*   recognise it as a pair, even if it turns out to be the first     *
+;*   element of a wff.                                                *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM SYMPAIR# ()
+ (LET ((ipair (IPAIR@)))
+  (IF (IST ipair) ipair
+   (LET ((fpair (FPAIR@)))
+    (IF (IST fpair) fpair
+     (LET ((sppair (SPPAIR@)))
+      (IF (IST sppair) sppair
+       (REMSG1 "A <pair>"))))))))
+
+(DEFLAM IPAIR@ ()
+ (LET ((left (INDSYM@)))
+  (IF (IST left)
+   (SEQ
+    (TK# COLON "A <indpair>" "colon")
+    (LET ((right (INDSYM#)))
+     (sympair-mak left right))))))
+
+(DEFLAM FPAIR@ ()
+ (LET ((left (FUNSYM@)))
+  (IF (IST left)
+   (SEQ
+    (TK# COLON "A <funpair>" "a colon")
+    (LET ((right (FUNSYM#)))
+     (sympair-mak left right))))))
+
+(DEFLAM SPSYM@ ()
+ (LET ((symbol (SENTSYM@)))
+    (IF (IST symbol) symbol
+     (PREDSYM@))))
+
+(DEFLAM SPSYM# ()
+ (LET ((symbol (SPSYM@)))
+  (IF (IST symbol) symbol
+   (REMSG1 "A <predsym> or a <sentsym>"))))
+
+(DEFLAM SPPAIR@ ()
+ (LET ((left (SPSYM@)))
+  (IF (IST left)
+   (SEQ
+    (TK# COLON "A <sppair>" "a colon")
+    (LET ((right (SPSYM#)))
+     (sympair-mak left right))))))
+
+;**********************************************************************
+;*                                                                    *
+;*     <wff-pair> ::= <left-wff> | <right-wff>                        *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM WFFPAIR@ ()
+ (LET ((leftwff (WFF@)))
+  (IF (IST leftwff)
+   (SEQ
+    (TK# COLON "A <wffpair>" "a colon")
+    (LET ((rightwff (WFF#)))
+     (wffpair-mak leftwff rightwff))))))
+
+(DEFLAM WFFPAIR# ()
+ (LET ((wffpair (WFFPAIR@)))
+  (IF (IST wffpair) wffpair
+   (REMSG1 "A <wffpair>"))))
+
+;**********************************************************************
+;*                                                                    *
+;*     <term-pair> ::= <left-term> | <right-term>                     *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM TERMPAIR@ ()
+ (LET ((leftterm (TERM@)))
+  (IF (IST leftterm)
+   (SEQ
+    (TK# COLON "A <termpair>" "a colon")
+    (LET ((rightterm (TERM#)))
+     (termpair-mak leftterm rightterm))))))
+
+(DEFLAM TERMPAIR# ()
+ (LET ((termpair (TERMPAIR@)))
+  (IF (IST termpair) termpair
+   (REMSG1 "A <termpair>"))))

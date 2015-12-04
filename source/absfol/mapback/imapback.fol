@@ -1,0 +1,14 @@
+(mknewcommand (QUOTE MAPBACK)  (QUOTE FOL) (QUOTE MAPBACK)
+              (QUOTE MAPBACK#)   FALSE)
+(mknewcommand (QUOTE OL2PRF)   (QUOTE FOL) (QUOTE MAPBACK)
+              (QUOTE OL2PRF#)    FALSE)
+(mknewcommand (QUOTE INSTW)    (QUOTE FOL) (QUOTE MAPBACK)
+              (QUOTE INSTW#)     FALSE)
+(mknewcommand (QUOTE INSTS)    (QUOTE FOL) (QUOTE MAPBACK)
+              (QUOTE INSTS#)     FALSE)
+(mknewcommand (QUOTE INSTT)    (QUOTE FOL) (QUOTE MAPBACK)
+              (QUOTE INSTT#)     FALSE)
+
+(mknewshowtoken (QUOTE INSTS) (QUOTE show-insts#) (QUOTE MAPBACK))
+
+(ol2prf-ini)

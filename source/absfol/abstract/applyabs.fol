@@ -1,0 +1,384 @@
+;*****************************************************************************
+;*                                                                           *
+;*  - applyabs.fol      APPLICATION OF AN ABSTRACTION TO OBJECTS             *
+;*                                                                           *
+;*                                                                           *
+;*                                                                           *
+;* This file includes all the routines needed to apply an abstraction to     *
+;* a generic object.                                                         *
+;* We can point out three different kinds of objects an abstraction can be   *
+;* applied to:                                                               *
+;*                                                                           *
+;* - ALPHABET SYMBOLS [section 1].                                           *
+;* Symbols are mapped onto the abstract context.                             *
+;* If the mapped ones don't belong yet to the the abstract alphabet,         *
+;* they are declared there.                                                  *
+;* All the information needed is found in the "smuggling" data-structures,   *
+;* `rightsymbols', which are converted into the abstracted symbols only after*
+;* "passing the frontier" between contexts.                                  *
+;*                                                                           *
+;* - GENERICAL TERMS AND WFFS [section 2].                                   *
+;* A term/wff is "shown" as the result of abstracting a given ground one.    *
+;* The abstract context is not modified.                                     *
+;* All required symbols must have been previously declared in the abstract   *
+;* context. A test of correctness of the abstracted expression is exploited. *
+;* The rules and the LABELS of the rightsymbols are used to create the       *
+;* "smuggling" data-structures `labelled-expressions', which are converted   *
+;* into the abstracted expressions only after "passing the frontier"         *
+;* between contexts.                                                         *
+;* A `labelled expression' is an internal rappresentation of a logical       *
+;* espression in which symbols are substituted  with their labels.           *
+;*                                                                           *
+;* - AXIOMS AND THEORIES [section 3].                                        *
+;* Axioms and theories are abstracted onto new ones, which are added to the  *
+;* abstract context,                                                         *
+;* The mapping of wffs works as in section 2.                                *
+;*                                                                           *
+;*****************************************************************************
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 1               ABSTRACTION APPLICATION TO SYMBOLS                        *
+;*                                                                           *
+;*                                                                           *
+;* The process of abstracting symbols requires only the information included *
+;* in the "maps". The "rules" are not used.                                  *
+;*                                                                           *
+;* In GETFOL you can't access  a symbol's data structure if it does not      *
+;* belong to the current context! Therefore, from the ground context's point *
+;* of view, we have to represent  an abstract symbol's information by        *
+;* means of a temporary data structure, called `rightsymbol' (see file       *
+;* maps.hgk). Thus the mapping of a symbol "s" is performed by the           *
+;* following steps:                                                          *
+;* 1) the system refers to the information of the maps and generates the     *
+;* "rightsymbol" which corresponds to "s".                                   *
+;* 2) it "passes the frontier", i.e. it switches to the abstract context     *
+;* (routine "probed-ctext-switch").                                          *
+;* 3) once there, it converts the rightsymbol into the corresponding         *
+;* symbols, and it declares the result to be part of the abstract signature. *
+;*                                                                           *
+;*****************************************************************************
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 1.1           ABSTRACTION APPLICATION TO SINGLE SYMBOLS                   *
+;*                                                                           *
+;*                                                                           *
+;*  SYNTAX:                                                                  *
+;*     (sym-applabs         sym abstraction)                                 *
+;*     (abssym-decl         rightsym)                                        *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*     sym-applabs            Performs the abstraction of a generical        *
+;*                            ground symbol.                                 *
+;*     abssym-decl            Declares a generic rightsymbol to be           *
+;*                            part of the abstract context.                  *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM sym-applabs (sym abstraction)
+ (LET ((gndctx (abstraction-get-gndctx  abstraction))
+         (absctx (abstraction-get-absctx  abstraction)))
+  (LET ((absmaps (flambda-get-absmaps (abstraction-get-flambda abstraction))))
+   (LET ((rightsym (absmaps-get-rightsym sym absmaps))) 
+     (SEQ
+        (probed-ctext-switch absctx)
+        (abssym-decl rightsym)
+        (probed-ctext-switch gndctx))))))
+
+
+(DEFLAM abssym-decl (rightsym)
+ (LET ((label (rightsym-get-label rightsym)))
+  (IF (SYMLABEL? label)
+   (PRINTMES5 "`" label "' has already been declared in `"(curcname-get) "'.")
+   (SEQ
+    (IF (SIMPRIGHTSYM? rightsym)
+     (IF (RIGHTSENT? rightsym)
+      (sentsym-declare (rightsent-get-typ rightsym)
+                       (rightsent-get-label rightsym)
+                       (rightsent-get-sact rightsym))
+      (indsym-declare (rightind-get-typ rightsym)
+                      (rightind-get-label rightsym)
+                      Mostgeneral                          ;!!!!!!!!!!!!
+                      (rightind-get-sact rightsym)))
+     (IF (RIGHTPRED? rightsym)
+       (predsym-declare (rightpred-get-typ rightsym)
+                        (rightpred-get-label rightsym)
+                        (rightpred-get-arity rightsym)
+                        (rightpred-get-sact rightsym))
+       (funsym-declare (rightfun-get-typ rightsym)
+                       (rightfun-get-label rightsym)
+                       (rightfun-get-arity rightsym)
+                       (fun-default_fmaps-build (rightfun-get-arity rightsym))
+                       (rightfun-get-sact rightsym))))
+    (SHOWSYM (label2sym label)))))) 
+
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 1.2      ABSTRACTION APPLICATION TO WHOLE GROUPS OF SYMBOLS               *
+;*                                                                           *
+;*                                                                           *
+;*  SYNTAX:                                                                  *
+;*     (syms-applabs       abstraction syms)                                 *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*     syms-applabs        Abstracts a whole group of symbols.               *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM syms-applabs (abstraction syms)
+ (LET ((gndctx (abstraction-get-gndctx  abstraction))
+       (absctx (abstraction-get-absctx  abstraction)))
+  (LET ((absmaps (flambda-get-absmaps (abstraction-get-flambda abstraction))))
+   (LET ((rightsyms (absmaps-get-rightsyms syms absmaps)))
+      (SEQ
+          (probed-ctext-switch absctx)
+          (MAPCAR 'abssym-decl rightsyms)
+          (probed-ctext-switch gndctx))))))
+
+
+;*****************************************************************************
+;*                                                                           *
+;*  2             ABSTRACTION APPLICATION TO EXPRESSIONS                     *
+;*                                                                           *
+;*                                                                           *
+;* The process of abstracting expressions requires both the information      *
+;* included  in the "maps" and in the "rules".                               *
+;*                                                                           *
+;* In GETFOL you can't access a symbol's data structure if it does not       *
+;* belong to the current context! Therefore, from the ground context's point *
+;* of view, we have to represent an expression of the abstract context       *
+;* by means of a temporary data structure, called `labelled expression'.     *
+;* A `labelled expression' is an internal representation of a logical        *
+;* espression in which symbols are substituted  with their labels.           *
+;*                                                                           *
+;* Therefore the mapping of a ground expression "exp" is performed by the    *
+;* following steps:                                                          *
+;* 1) the system refers to the information of both maps and rules and        *
+;* generates the corresponding `labelled expression'. (see file rew.fol)     *
+;* 2) it "passes the frontier", i.e. it switches to the abstract context     *
+;* (routine "probed-ctext-switch").                                          *
+;* 3) once there, it converts the `labelled expression' into the             *
+;* corresponding wff\term, and it displays it to the user.                   *
+;* The abstract context is not modified.                                     *
+;*                                                                           *
+;*                                                                           *
+;*  SYNTAX:                                                                  *
+;*     (term-applabs   term abstraction)                                     *
+;*     (wff-applabs    wff abstraction)                                      *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*     term-applabs              Applies an abstraction to terms.            *
+;*                               It switches to abstract context and shows   *
+;*                               there the abstract term.                    *
+;*     wff-applabs               Applies an abstraction to wffs.             *
+;*                               It switches to abstract context and shows   *
+;*                               there the abstract wff.                     *
+;*                                                                           *
+;*****************************************************************************
+                                 
+
+(DEFLAM term-applabs (term abstraction)
+  (LET ((gndctx (abstraction-get-gndctx  abstraction))
+        (absctx (abstraction-get-absctx  abstraction)))
+    (LET ((labelterm (exp-abstract term abstraction)))
+     (SEQ
+      (probed-ctext-switch absctx)
+      (LET ((result (labexp2exp labelterm)))
+       (IFN (TERM-REC result)
+        (SEQ
+         (PRINTMES3 
+                  "The mapping of the ground term is not a correct term in `" 
+                  absctx "'.")
+         (probed-ctext-switch gndctx))
+        (SEQ
+          (printexp result)
+          (PRINTMES "")
+          (PRINTMES3 "is the mapped term from `" 
+                     gndctx "'."))))))))
+
+
+(DEFLAM wff-applabs (wff abstraction)
+  (LET ((gndctx (abstraction-get-gndctx  abstraction))
+        (absctx (abstraction-get-absctx  abstraction)))
+    (LET ((labelwff (exp-abstract wff abstraction)))
+     (SEQ
+      (probed-ctext-switch absctx)
+      (LET ((result (labexp2exp labelwff)))
+       (IFN (WFF-REC result)
+        (SEQ
+         (PRINTMES3 
+                  "The mapping of the ground wff is not a correct wff in `" 
+                  absctx "'.")
+         (probed-ctext-switch gndctx))
+        (SEQ
+          (printexp result)
+          (PRINTMES "")
+          (PRINTMES3 "is the mapped wff from `" 
+                     gndctx "'."))))))))
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;*  3         ABSTRACTION APPLICATION TO AXIOMS AND THEORIES                 *
+;*                                                                           *
+;*                                                                           *
+;* The process of abstracting axioms is analogous to the case of simple      *
+;* expressions. The only difference is that the new axiom is declared to     *
+;* be part of the new context.                                               *
+;*                                                                           *
+;*                                                                           *
+;*  SYNTAX:                                                                  *
+;*                                                                           *
+;*     (axiom-applabs  axiom abstraction)                                    *
+;*     (theory-applabs theory abstraction)                                   *
+;*                                                                           *
+;*     (default-axiom-rename  absname name)                                  *
+;*     (default-axioms-rename absname namelist)                              *
+;*     (NOTAXLABEL            label)                                         *
+;*                                                                           *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*                                                                           *
+;*      axiom-applabs             Generates a new axiom in the abstract      *
+;*                                space as the result of the mapping         *
+;*                                of a ground one.                           *
+;*      theory-applabs            Generates a new theory in the abstract     *
+;*                                space as the result of the mapping         *
+;*                                of a ground one.                           *
+;*                                                                           *
+;*                                                                           *
+;*     default-axiom-rename   Creates the default name for a mapped axiom,   *
+;*                            i.e  `<absname>.<ground axiom name>'.          *
+;*     default-axioms-rename  Creates the default names for a group of       *
+;*                            mapped axioms.                                 *
+;*     NOTAXLABEL             Isn't it an axiom label?                       *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM axiom-applabs (axiom absaxiomname abstraction)
+  (LET ((gndctx (abstraction-get-gndctx  abstraction))
+        (absctx (abstraction-get-absctx  abstraction)))
+    (LET ((gndwff (axiom-get-wff axiom)))
+      (LET ((labelwff (exp-abstract gndwff abstraction)))
+       (SEQ
+        (probed-ctext-switch absctx)
+        (IF (AXLABEL? absaxiomname)
+         (SEQ
+          (PRINTMES3 "`" absaxiomname 
+            "' is already the name of an axiom in the abstract context.")
+          (probed-ctext-switch gndctx))
+         (LET ((abswff (labexp2exp labelwff)))
+          (IFN (WFF-REC abswff)
+           (SEQ
+            (PRINTMES3 
+             "The mapping of the ground axiom's wff is not a correct wff in `" 
+               absctx "'.")
+            (probed-ctext-switch gndctx))
+           (SEQ
+            (axiom (axiom-mak absaxiomname abswff))
+            (PRINTMES3 
+               "has been declared to be a new axiom in `" 
+               absctx "'.")))))))))) 
+           
+
+
+(DEFLAM theory-applabs (absthname axioms absaxnames abstraction) 
+  (LET ((gndctx (abstraction-get-gndctx  abstraction))
+        (absctx (abstraction-get-absctx  abstraction)))
+    (LET ((gndwffs (MAPCAR 'axiom-get-wff axioms)))
+     (LET ((labelwffs (exps-abstract gndwffs abstraction)))
+       (SEQ
+        (probed-ctext-switch absctx)
+        (IF (THLABEL absthname)
+         (SEQ
+           (PRINTMES3 "`" absthname 
+             "' is already the name of a theory in the abstract context.")
+           (probed-ctext-switch gndctx))
+         (LET ((abswffs (labexps2exps labelwffs)))
+          (LET ((firstuncorrect (POS MTL (MAPCAR 'WFF-REC abswffs))))
+           (IFN (ZERO? firstuncorrect)
+            (SEQ
+              (probed-ctext-switch gndctx)
+              (PRINTMES "The mapping of the wff of the ground axiom :")
+              (axiom-print (HGKM-NTH firstuncorrect axioms))  
+              (PRINTMES "")
+              (PRINTMES3 "is not a correct wff in `"
+                          absctx "'."))
+            (LET ((firstwrong (POS MTL (MAPCAR 'NOTAXLABEL absaxnames))))
+             (IFN (ZERO? firstwrong)
+              (SEQ
+               (PRINTMES5 "`" (HGKM-NTH firstwrong absaxnames)
+                 "' is already the name of an axiom in `" absctx "'.")
+               (probed-ctext-switch gndctx))
+              (LET ((absaxioms (MAPCAR 'axiom-mak absaxnames abswffs)))
+               (SEQ
+                (theory absthname absaxioms)
+                (PRINTMES "")
+                (PRINTMES3 
+                "has been declared to be a new theory in `" 
+               absctx "'."))))))))))))))
+
+
+;(DEFLAM default-axiom-rename (absname name) 
+; (CONCAT-SYMS absname (CONCAT-SYMS '\. name)))
+(DEFLAM default-axiom-rename (absname name) name)
+
+(DEFLAM default-axioms-rename (absname namelist)
+ (IF (MTL? namelist)
+  MTL
+  (LCONS (default-axiom-rename absname (FIRST namelist))
+         (default-axioms-rename absname (REST namelist)))))
+
+
+(DEFLAM NOTAXLABEL (axlabel) (NOT (AXLABEL? axlabel)))
+
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;*  4         ABSTRACTION APPLICATION TO THEOREMS                            *
+;*                                                                           *
+;*                                                                           *
+;* The process of abstracting theorems is absolutely analogous to simple     *
+;* expressions. The only difference is that the new theorem is declared to   *
+;* be part of the new context.                                               *
+;*                                                                           *
+;*                                                                           *
+;*  SYNTAX:                                                                  *
+;*     (theorem-applabs theorem abstraction)                                 *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*      theorem-applabs            Generates a new theorem in the abstract   *
+;*                                 space as the result of the mapping        *
+;*                                 of a ground one.                          *
+;*                                                                           *
+;*****************************************************************************
+
+
+(DEFLAM theorem-applabs (theorem abstraction)
+  (LET ((gndctx (abstraction-get-gndctx  abstraction))
+        (absctx (abstraction-get-absctx  abstraction)))
+    (LET ((gndwff (line-get-wff theorem)))
+      (LET ((labelwff (exp-abstract gndwff abstraction)))
+       (SEQ
+        (probed-ctext-switch absctx)
+        (LET ((abswff (labexp2exp labelwff)))
+         (IFN (WFF-REC abswff)
+          (SEQ
+           (PRINTMES3 
+           "The mapping of the ground theorem's wff is not a correct wff in `" 
+               absctx "'.")
+           (probed-ctext-switch gndctx))
+          (SEQ
+            (proof-add-line
+              abswff
+              Emptydeplist
+              (reason-mak 'ABSTHEOREM (ras_empty-mak)))))))))))

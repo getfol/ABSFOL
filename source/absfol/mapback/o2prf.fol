@@ -1,0 +1,705 @@
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (o2prf)                                                          *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Transform an outline into a proof.                               *
+;*                                                                    *
+;*   o2prf performs the following steps forevery line of              *
+;*   the outline:                                                     *
+;*                                                                    *
+;*   - if the line is an assumption, just assume a fact               *
+;*    with the same wff into the current proof;                       *
+;*                                                                    *
+;*   - if the line has been matched, just do nothing.                 *
+;*    if the line is an inference rule application, try to add a      *
+;*    fact into the rule, according to the rule; compare the wffs     *
+;*    and carry on if the wff of tha fact and the wff of the          *
+;*    outline are the same;                                           *
+;*                                                                    *
+;*   - otherwise stop and print an error message.                     *
+;*                                                                    *
+;*   It's quite funny the way labels are retrieved:                   *
+;*                                                                    *
+;*   outline ---> reason ---> label                                   *
+;*                              /\                                    *
+;*                             /  \                                   *
+;*                      matched   nonmatched                          *
+;*                         |          |                               *
+;*                   retrieve         |                               *
+;*              the label of the      |                               *
+;*                    matcher         |                               *
+;*                        \          /                                *
+;*                         \        /                                 *
+;*                          \      /                                  *
+;*                           \    /                                   *
+;*                use table (outlinelabel factlabel)                  *
+;*            to find the label of the fact you must use.             *
+;*                                                                    *
+;*   Therefore:                                                       *
+;*   - it is necessary a table (matched try . matching try);          *
+;*                                                                    *
+;*   - it is necessary a table (outlinelabel . factlabel).            *
+;*    A new pair is added to this table every time a new assumption   *
+;*    is made into the current proof.                                 *
+;*                                                                    *
+;*  NOTE:                                                             *
+;*   The fact that the result of an inference rule application has    *
+;*   a label greater of all its premisses (in the outline),           *
+;*   guarantees the algorithm assumes the facts before applying       *
+;*   any inferenvce rule using those facts.                           *
+;*   Of course the outline must be ordered before starting.           *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM ol2prf ()
+ (LET ((orderedoutline (ORDER-PAIR-TRY (curtrylist-get))))
+  (SEQ
+   (ol2prf-ini)
+   (outline2proof orderedoutline))))
+
+(DEFLAM outline2proof (outline)
+ (IF (MTL? outline) (NOP)
+  (IFN (try2fact (FIRST outline)) (NOP)
+   (outline2proof (REST outline)))))
+
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (try2fact try)                                                   *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Given a try this function does the following:                    *
+;*   1) if the try is an assumption, it just assumes the wff and      *
+;*      add a pair to the ol2prflist. Returns TRUE.                   *
+;*   2) if the try is the result of an inference rule application:    *
+;*      build the wff accordingly to the rule, compare with the wff   *
+;*      of the try and returns TRUE or FALSE accordingly.             *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM try2fact (try)
+ (IF (IS-MATCHED? try) TRUE
+  (LET ((rule (reason-get-rule (try-get-reason try))))
+   (IF (EQ rule 'ASSUME) (applyassume try)
+   (IF (EQ rule 'ANDI) (applyandi try)
+   (IF (EQ rule 'ANDE) (applyande try)
+   (IF (EQ rule 'ORI) (applyori try)
+   (IF (EQ rule 'ORE) (applyore try)
+   (IF (EQ rule 'FALSEI) (applyfalsei try)
+   (IF (EQ rule 'FALSEE) (applyfalsee try)
+   (IF (EQ rule 'NOTI) (applynoti try)
+   (IF (EQ rule 'NOTE) (applynote try)
+   (IF (EQ rule 'IMPE) (applyimpe try)
+   (IF (EQ rule 'IMPI) (applyimpi try)
+   (IF (EQ rule 'IFFI) (applyiffi try)
+   (IF (EQ rule 'IFFE) (applyiffe try)
+   (IF (EQ rule 'ALLI) (applyalli try)
+   (IF (EQ rule 'ALLE) (applyalle try)
+   (IF (EQ rule 'EXISTE) (applyexiste try)
+   (IF (EQ rule 'EXISTI) (applyexisti try)
+   (IF (EQ rule 'SUBST) (applysubst try)
+   (IF (EQ rule 'WFFIFE) (applywffife try)
+   (IF (EQ rule 'WFFIFEN) (applywffifen try)
+   (IF (EQ rule 'WFFIFI) (applywffifi try)
+   (IF (EQ rule 'TERMIFE) (applytermife try)
+   (IF (EQ rule 'TERMIFEN) (applytermifen try)
+   (IF (EQ rule 'TERMIFI) (applytermifen try)
+   (IF (EQ rule 'TAUT) (applytaut try)
+   (IF (EQ rule 'TAUTEQ) (applytauteq try)
+   (IF (EQ rule 'PTAUT) (apllyptaut try)
+   (IF (EQ rule 'MONAD) (applymonad try)
+   (IF (EQ rule 'MONADEQ) (applymonadeq try)
+    (SEQ
+     (PRINTMES "Damn, applyX non impl."))))))))))))))))))))))))))))))))))
+
+;**********************************************************************
+;*                                                                    *
+;*   Functions to retrieve the n-th ra of the reason of a try         *
+;*   (n=1..4) and to retrieve, from a reason, the try/axiom needed    *
+;*   to apply a rule.                                                 *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB try-get-ra1 (try)
+ (ras-get-first (reason-get-ras (try-get-reason try))))
+
+(DEFSUB try-get-ra2 (try)
+ (ras-get-first (ras-get-rest (reason-get-ras (try-get-reason try)))))
+
+(DEFSUB try-get-ra3 (try)
+ (ras-get-first (ras-get-rest
+                 (ras-get-rest (reason-get-ras (try-get-reason try))))))
+
+(DEFSUB try-get-ra4 (try)
+ (ras-get-first
+  (ras-get-rest
+   (ras-get-rest
+    (ras-get-rest (reason-get-ras (try-get-reason try)))))))
+
+(DEFSUB try-get-ra5 (try)
+ (ras-get-first
+  (ras-get-rest
+   (ras-get-rest
+    (ras-get-rest (ras-get-rest (reason-get-ras (try-get-reason try))))))))
+ 
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (ra-get-fact ra)                                                 *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Given a ra, it finds the label of the {fact, axiom} of the ra    *
+;*   and returns a fact.                                              *
+;*                                                                    *
+;*  ALGORITHM:                                                        *
+;*   1: if the reason is TRY or FACT, return the FACT                 *
+;*   2: if the reason is AXIOM return the fact built from the         *
+;*      axiom                                                         *
+;*   2: if the reason is an AXIOMSCHEMA, returns the fact             *
+;*      obtained by instantiation of the axiomschema                  *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM ra-get-fact (ra)
+ (IF (OR (FACT_RA ra)(TRY_RA ra)(FACTAND_RA ra))
+  (curllist-get-line (ol-get-fl (ra-get-value ra)))
+  (IF (AXIOM_RA ra)
+   (LET ((label (ra-get-value ra)))
+    (LET ((axiom (axioms-get-axiom label)))
+     (fact-mak
+      label
+      (axiom-get-wff axiom)
+      Emptydeplist
+      (reason-mak 'AXIOM (ras1-mak (axiom_ra-mak axiom))))))
+   (IF (AXIOMSCHEMA_RA ra)
+    (LET ((label (CAR (ra-get-value ra)))
+          (wtsubstrep (CDR (ra-get-value ra))))
+     (LET ((axiom (axioms-get-axiom label)))
+      (fact-mak
+       label
+       (wfftrmsubst (axiom-get-wff axiom) wtsubstrep MTL)
+       Emptydeplist
+       (reason-mak
+        'AXIOMINSTANTIATION
+        (ras2-mak
+         (axiomschema_ra-mak axiom)
+         (wtsubstrep_ra-mak wtsubstrep))))))
+    (SEQ
+     (curllist-get-line (ol-get-fl (ra-get-value ra)))
+     (PRINTMES "ra-get-fact: somethin' wrong?"))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (try-get-factN try)                                              *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Given a try they return the N fact in the reason of the try.     *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB try-get-fact1 (try)
+ (ra-get-fact (ras-get-first (reason-get-ras (try-get-reason try)))))
+
+(DEFSUB try-get-fact2 (try)
+ (ra-get-fact
+  (ras-get-first (ras-get-rest (reason-get-ras (try-get-reason try))))))
+
+(DEFSUB try-get-fact3 (try)
+ (ra-get-fact
+  (ras-get-first
+   (ras-get-rest (ras-get-rest (reason-get-ras (try-get-reason try)))))))
+
+(DEFLAM trylist2factlist (value)
+ (IF (MTL? value) MTL
+  (LET ((try (FIRST value)))
+   (LET ((rule (reason-get-rule (try-get-reason try)))
+	 (ra (ras-get-first (reason-get-ras (try-get-reason try)))))
+    (IF (EQ rule 'AXIOM)
+     (LET ((label (FIRST (ra-get-value ra))))
+      (LET ((axiom (axioms-get-axiom label)))
+       (LCONS
+	(fact-mak
+	 label
+	 (axiom-get-wff axiom)
+	 Emptydeplist
+	 (reason-mak 'AXIOM (ras1-mak (axiom_ra-mak axiom))) )
+	(trylist2factlist (REST value)))))
+     (LCONS
+      (curllist-get-line (ol-get-fl (try-get-label (FIRST value))))
+      (trylist2factlist (REST value))))))))
+
+(DEFLAM absfactlist2factlist (value)
+ (IF (MTL? value) MTL
+  (LET ((fact (curtrylist-get-try (FIRST value))))
+   (IF (IST fact)
+    (LET ((rule (reason-get-rule (try-get-reason fact)))
+          (ra (ras-get-first (reason-get-ras (try-get-reason fact)))))
+     (IF (EQ rule 'AXIOM)
+      (LET ((label (FIRST (ra-get-value ra))))
+       (LET ((axiom (axioms-get-axiom label)))
+        (LCONS
+         (fact-mak
+          label
+          (axiom-get-wff axiom)
+          Emptydeplist
+          (reason-mak 'AXIOM (ras1-mak (axiom_ra-mak axiom))))
+         (absfactlist2factlist (REST value)))))
+      (LCONS
+       (curllist-get-line (ol-get-fl (fact-get-label fact)))
+       (absfactlist2factlist (REST value)))))
+    (IF (NATNUM (id-get-left (FIRST value)))
+     (PRINTMES "SI E VERIFICATO UN ERRORE IN ABSFACTLIST2FACTLIST")
+     (LET ((axiom (axioms-get-axiom (id-get-left (FIRST value)))))
+      (LCONS
+       (fact-mak
+        (id-get-left (FIRST value))
+        (axiom-get-wff axiom)
+        Emptydeplist
+        (reason-mak 'AXIOM (ras1-mak (axiom_ra-mak axiom))))
+       (absfactlist2factlist (REST value)))))))))
+
+;**********************************************************************
+;*                                                                    *
+;*    Inference rule application, variable updating, and results!     *
+;*    Definition's substitution is missed                             *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM applyassume (try)
+ (SEQ
+  (assume (LIST (try-get-wff try)))
+  (ol2prf-update try)
+  TRUE))
+
+(DEFLAM applyandi (try)
+ (LET ((fact1 (try-get-fact1 try))
+       (fact2 (try-get-fact2 try)))
+  (LET ((factwff (mkand (fact-get-wff fact1)(fact-get-wff fact2))))
+   (IF (EQUALEXP (try-get-wff try) factwff)
+    (SEQ
+     (andi fact1 fact2)
+     (ol2prf-update try)
+     TRUE)
+    (SEQ
+     (OL2PRF-ERROR1 try factwff)
+     FALSE)))))
+
+(DEFLAM applyande (try)
+ (LET ((fact (try-get-fact1 try))
+       (natnumlist (ra-get-value (try-get-ra2 try))))
+  (LET ((factwff (wff-get-subandwff (fact-get-wff fact) natnumlist)))
+   (IF (EQUALEXP (try-get-wff try) factwff)
+    (SEQ
+     (ande fact natnumlist)
+     (ol2prf-update try)
+     TRUE)
+    (SEQ
+     (OL2PRF-ERROR1 try factwff)
+     FALSE)))))
+        
+(DEFLAM applyori (try)
+ (LET ((fact (try-get-fact1 try))
+       (wff (ra-get-value (try-get-ra2 try)))
+       (lr (ra-get-value (try-get-ra3 try))))
+  (LET ((factwff (IF (OR (EQ lr 'rl)(EQ lr 'RL))
+                  (mkor wff (fact-get-wff fact))
+                  (mkor (fact-get-wff fact) wff))))
+   (IF (EQUALEXP (try-get-wff try) factwff)
+    (SEQ
+     (ori fact wff lr)
+     (ol2prf-update try)
+     TRUE)
+    (SEQ
+     (OL2PRF-ERROR1 try factwff)
+     FALSE)))))
+
+(DEFLAM applyore (try)
+ (LET ((fact1 (try-get-fact1 try))
+       (fact2 (try-get-fact2 try))
+       (fact3 (try-get-fact3 try)))
+  (IF (EQUALEXP (try-get-wff try)
+                (fact-get-wff fact2))
+   (SEQ
+    (ore fact1 fact2 fact3)
+    (ol2prf-update try)
+    TRUE)
+   (SEQ
+    (OL2PRF-ERROR1 try (fact-get-wff fact2))
+    FALSE))))
+
+(DEFLAM applyfalsei (try)
+ (LET ((fact1 (try-get-fact1 try))
+       (fact2 (try-get-fact2 try)))
+  (IF (EQUALEXP (try-get-wff try) (mkfalsity))
+   (SEQ
+    (falsei fact1 fact2)
+    (ol2prf-update try)
+    TRUE)
+   (SEQ
+    (OL2PRF-ERROR1 try (mkfalsity))
+    FALSE))))
+
+(DEFLAM applyfalsee (try)
+ (LET ((fact (try-get-fact1 try))
+       (wff (ra-get-value (try-get-ra2 try))))
+  (IF (EQUALEXP (try-get-wff try) wff)
+   (SEQ
+    (falsee fact wff)
+    (ol2prf-update try)
+    TRUE)
+   (SEQ
+    (OL2PRF-ERROR1 try wff)
+    FALSE))))
+   
+
+(DEFLAM applynoti (try)
+ (LET ((fact (try-get-fact1 try))
+       (wff (ra-get-value (try-get-ra2 try))))
+  (IF (EQUALEXP (try-get-wff try)(mknot wff))
+   (SEQ
+    (noti fact wff)
+    (ol2prf-update try)
+    TRUE)
+   (SEQ
+    (OL2PRF-ERROR1 try (mknot wff))
+    FALSE))))
+
+(DEFLAM applynote (try)
+ (LET ((fact (try-get-fact1 try))
+       (wff (ra-get-value (try-get-ra2 try))))
+  (IF (EQUALEXP (try-get-wff try)(body wff))
+   (SEQ
+    (note fact wff)
+    (ol2prf-update try)
+    TRUE)
+   (SEQ
+    (OL2PRF-ERROR1 try (body wff))
+    FALSE))))
+
+(DEFLAM applyimpe (try)
+ (LET ((fact1 (try-get-fact1 try))
+       (fact2 (try-get-fact2 try)))
+  (LET ((wff1 (fact-get-wff fact1))
+        (wff2 (fact-get-wff fact2)))
+   (LET ((factwff (IF (IS-IMP-OF? wff1 wff2) (concl wff1) (concl wff2))))
+    (IF (EQUALEXP (try-get-wff try) factwff)
+     (SEQ
+      (impe fact1 fact2)
+      (ol2prf-update try)
+      TRUE)
+     (SEQ
+      (OL2PRF-ERROR1 try factwff)
+      FALSE))))))
+
+(DEFLAM applyimpi (try)
+ (LET ((wff (ra-get-value (try-get-ra1 try)))
+       (fact (try-get-fact2 try)))
+  (IF (EQUALEXP (try-get-wff try)
+                (mkimp wff (fact-get-wff fact)))
+   (SEQ
+    (impi wff fact)
+    (ol2prf-update try)
+    TRUE)
+   (SEQ
+    (OL2PRF-ERROR1 try (mkimp wff (fact-get-wff fact)))
+    FALSE))))
+
+(DEFLAM applyiffi (try)
+ (LET ((fact1 (try-get-fact1 try))
+       (fact2 (try-get-fact2 try)))
+  (LET ((factwff (mkiff (hypot (fact-get-wff fact1))
+                       (hypot (fact-get-wff fact2)))))
+   (IF (EQUALEXP (try-get-wff try) factwff)
+    (SEQ
+     (iffi fact1 fact2)
+     (ol2prf-update try)
+     TRUE)
+    (SEQ
+     (OL2PRF-ERROR1 try factwff)
+     FALSE)))))
+
+(DEFLAM applyiffe (try)
+ (LET ((fact (try-get-fact1 try))
+       (natnum (ra-get-value (try-get-ra2 try))))
+  (LET ((factwff (wffiff-get-wffimp (fact-get-wff fact) natnum)))
+  (IF (EQUALEXP (try-get-wff try) factwff)
+   (SEQ
+    (iffe fact natnum)
+    (ol2prf-update try)
+    TRUE)
+   (SEQ
+    (OL2PRF-ERROR1 try factwff)
+    FALSE)))))
+
+(DEFLAM applyalli (try)
+ (LET ((fact (try-get-fact1 try))
+       (substlist (ra-get-value (try-get-ra2 try))))
+  (LET ((factwff (wfforall-mak (fact-get-wff fact)(REVERSE substlist))))
+   (IF (EQUALEXP (try-get-wff try) factwff)
+    (SEQ
+     (alli fact substlist)
+     (ol2prf-update try)
+     TRUE)
+    (SEQ
+     (OL2PRF-ERROR1 try factwff)
+     FALSE)))))
+
+(DEFLAM applyalle (try)
+ (LET ((fact (try-get-fact1 try))
+        (termlist (ra-get-value (try-get-ra2 try))))
+  (LET ((factwff (alle-mak (fact-get-wff fact) termlist)))
+   (IF (EQUALEXP (try-get-wff try) factwff)
+    (SEQ
+     (alle fact termlist)
+     (ol2prf-update try)
+     TRUE)
+    (SEQ
+     (OL2PRF-ERROR1 try factwff)
+     FALSE)))))
+
+(DEFLAM applyexisti (try)
+ (LET ((fact (try-get-fact1 try))
+       (termlist (ra-get-value (try-get-ra2 try))))
+  (LET ((factwff (wffexists-mak (fact-get-wff fact) termlist)))
+   (IF (EQUALEXP (try-get-wff try) factwff)
+    (SEQ
+     (existi fact termlist)
+     (ol2prf-update try)
+     TRUE)
+    (SEQ
+     (OL2PRF-ERROR1 try factwff)
+     FALSE)))))
+
+(DEFLAM applyexiste (try)
+ (LET ((fact (try-get-fact1 try))
+       (varorparlist (ra-get-value (try-get-ra2 try))))
+  (LET ((factwff (existe-mak (fact-get-wff fact) varorparlist)))
+   (IF (EQUALEXP (try-get-wff try) factwff)
+    (SEQ
+     (existe fact varorparlist)
+     (ol2prf-update try)
+     TRUE)
+    (SEQ
+     (OL2PRF-ERROR1 try factwff)
+     FALSE)))))
+ 
+(DEFLAM applysubst (try)
+ (LET ((fact1 (try-get-fact1 try))
+       (fact2 (try-get-fact2 try))
+       (natnumlist (ra-get-value (try-get-ra3 try)))
+       (lr (ra-get-value (try-get-ra4 try))))
+  (LET ((factwff (IF (OR (EQ lr 'RIGHT) (EQ lr 'right))
+                  (substexp+occ (rtequ (fact-get-wff fact2))
+                                (lfequ (fact-get-wff fact2))
+                                (fact-get-wff fact1) 
+                                (IFN (MTL? natnumlist) natnumlist 'ALL))
+                  (substexp+occ (lfequ (fact-get-wff fact2))
+                                (rtequ (fact-get-wff fact2))
+                                (fact-get-wff fact1) 
+                                (IFN (MTL? natnumlist) natnumlist 'ALL)))))
+   (IF (EQUALEXP (try-get-wff try) factwff)
+    (SEQ
+     (subst fact1 fact2 natnumlist lr)
+     (ol2prf-update try)
+     TRUE)
+    (SEQ
+     (OL2PRF-ERROR1 try factwff)
+     FALSE)))))
+
+(DEFLAM applytermife (try)
+ (LET ((fact1 (try-get-fact1 try))
+       (fact2 (try-get-fact2 try))
+       (termif (ra-get-value (try-get-ra3 try)))
+       (occ (ra-get-value (try-get-ra4 try))))
+  (LET ((factwff (substexp+occ termif (thenof termif)
+                               (fact-get-wff fact1) occ)))
+   (IF (EQUALEXP (try-get-wff try) factwff)
+    (SEQ
+     (termife fact1 fact2 termif occ)
+     (ol2prf-update try)
+     TRUE)
+    (SEQ
+     (OL2PRF-ERROR1 try factwff)
+     FALSE)))))
+             
+(DEFLAM applytermifen (try)
+ (LET ((fact1 (try-get-fact1 try))
+       (fact2 (try-get-fact2 try))
+       (termif (ra-get-value (try-get-ra3 try)))
+       (occ (ra-get-value (try-get-ra4 try))))
+  (LET ((factwff (substexp+occ termif (elseof termif)
+                               (fact-get-wff fact1) occ)))
+   (IF (EQUALEXP (try-get-wff try) factwff)
+    (SEQ
+     (termifen fact1 fact2 termif occ)
+     (ol2prf-update try)
+     TRUE)
+    (SEQ
+     (OL2PRF-ERROR1 try factwff)
+     FALSE)))))
+ 
+(DEFLAM applytermifi (try)
+ (LET ((fact1 (try-get-fact1 try))
+       (fact2 (try-get-fact2 try))
+       (wff (ra-get-value (try-get-ra3 try)))
+       (term1 (ra-get-value (try-get-ra4 try)))
+       (term2 (ra-get-value (try-get-ra5 try))))
+  (LET ((factwff (substexp+occ term1 (mktrmif wff term1 term2)
+                               (fact-get-wff fact1) 'ALL)))
+   (IF (EQUALEXP (try-get-wff try) factwff)
+    (SEQ
+     (termifi fact1 fact2 wff term1 term2)
+     (ol2prf-update try)
+     TRUE)
+    (SEQ
+     (OL2PRF-ERROR1 try factwff)
+     FALSE)))))
+ 
+(DEFLAM applywffife (try)
+ (LET ((fact1 (try-get-fact1 try))
+       (fact2 (try-get-fact2 try)))
+  (IF (EQUALEXP (try-get-wff try) (thenof (fact-get-wff fact1)))
+   (SEQ
+    (wffife fact1 fact2)
+    (ol2prf-update try)
+    TRUE)
+   (SEQ
+    (OL2PRF-ERROR1 try (thenof (fact-get-wff fact1)))
+    FALSE))))
+
+(DEFLAM applywffifen (try)
+ (LET ((fact1 (try-get-fact1 try))
+       (fact2 (try-get-fact2 try)))
+  (IF (EQUALEXP (try-get-wff try) (elseof (fact-get-wff fact1)))
+   (SEQ
+    (wffifen fact1 fact2)
+    (ol2prf-update try)
+    TRUE)
+   (SEQ
+    (OL2PRF-ERROR1 try (elseof (fact-get-wff fact1)))
+    FALSE))))
+
+(DEFLAM applywffifi (try)
+ (LET ((wff (ra-get-value (try-get-ra1 try)))
+       (fact1 (try-get-fact2 try))
+       (fact2 (try-get-fact3 try)))
+  (LET ((factwff (mkwffif wff (fact-get-wff fact1) (fact-get-wff fact2))))
+   (IF (EQUALEXP (try-get-wff try) factwff)
+    (SEQ
+     (wffifi wff fact1 fact2)
+     (ol2prf-update try)
+     TRUE)
+    (SEQ
+     (OL2PRF-ERROR1 try factwff)
+     FALSE)))))
+
+(DEFLAM applytaut (try)
+ (LET ((wff (ra-get-value (try-get-ra1 try))) 
+       (ra2 (ras-get-first (ras-get-rest
+			    (reason-get-ras (try-get-reason try))))))
+  (IF (EQUALEXP (try-get-wff try) wff)
+   (LET ((factlist (IF (FACTS_RA ra2)
+                    (absfactlist2factlist (ra-get-value ra2))
+                    (trylist2factlist (ra-get-value ra2)))))
+    (IF (ptaut (tautren (facts_imp_wff-mak wff factlist)))
+     (SEQ
+      (proof-add-line wff
+                      (facts-union-dep factlist)
+                      (reason-mak 'TAUT (ras2-mak (wff_ra-mak wff)
+                                                  (facts_ra-mak factlist))))
+      (ol2prf-update try)
+      TRUE)
+     (TAUTMSG wff factlist)))
+   (SEQ
+    (OL2PRF-ERROR1 try wff)
+    FALSE))))
+
+(DEFLAM applytauteq (try)
+ (LET ((wff (ra-get-value (try-get-ra1 try)))
+       (ra2 (ras-get-first (ras-get-rest 
+                            (reason-get-ras (try-get-reason try))))))
+  (IF (EQUALEXP (try-get-wff try) wff)
+   (LET ((factlist (IF (FACTS_RA ra2)
+                    (absfactlist2factlist (ra-get-value ra2))
+                    (trylist2factlist (ra-get-value ra2)))))
+    (IF (ptauteq (tautren (facts_imp_wff-mak wff factlist)))
+     (SEQ
+      (proof-add-line wff
+                      (facts-union-dep factlist)
+                      (reason-mak 'TAUT (ras2-mak (wff_ra-mak wff)
+                                                  (facts_ra-mak factlist))))
+      (ol2prf-update try)
+      TRUE)
+     (TAUTMSG wff factlist)))
+   (SEQ
+    (OL2PRF-ERROR1 try wff)
+    FALSE))))
+
+(DEFLAM applyptaut (try)
+ (LET ((wff (ra-get-value (try-get-ra1 try)))
+       (ra2 (ras-get-first (ras-get-rest
+			    (reason-get-ras (try-get-reason try))))))
+  (IF (EQUALEXP (try-get-wff try) wff)
+   (LET ((factlist (IF (FACTS_RA ra2)
+                    (absfactlist2factlist (ra-get-value ra2))
+                    (trylist2factlist (ra-get-value ra2)))))
+    (IF (ptaut (facts_imp_wff-mak wff factlist))
+     (SEQ
+      (proof-add-line wff
+                      (facts-union-dep factlist)
+                      (reason-mak 'PTAUT (ras2-mak (wff_ra-mak wff)
+                                                   (facts_ra-mak factlist))))
+      (ol2prf-update try)
+      TRUE)
+      (PTAUTMSG wff factlist)))
+   (SEQ
+    (OL2PRF-ERROR1 try wff)
+    FALSE))))
+
+(DEFLAM applymonad (try)
+ (LET ((wff (ra-get-value (try-get-ra1 try)))
+       (ra2 (ras-get-first (ras-get-rest
+			    (reason-get-ras (try-get-reason try))))))
+  (IF (EQUALEXP (try-get-wff try) wff)
+   (LET ((factlist (IF (FACTS_RA ra2)
+                    (absfactlist2factlist (ra-get-value ra2))
+                    (trylist2factlist (ra-get-value ra2)))))
+    (IF (ptaut (rewr-apply '(nnf reduce skolemize phexp)
+                           (facts_imp_wff-mak wff factlist)))
+     (SEQ
+      (proof-add-line wff
+                      (facts-union-dep factlist)
+                      (reason-mak 'MONAD (ras2-mak (wff_ra-mak wff)
+                                                   (facts_ra-mak factlist))))
+      (ol2prf-update try)
+      TRUE)
+     (MONADMSG wff factlist)))
+   (SEQ
+    (OL2PRF-ERROR1 try wff)
+    FALSE))))   
+
+(DEFLAM applymonadeq (try)
+ (LET ((wff (ra-get-value (try-get-ra1 try)))
+       (ra2 (ras-get-first (ras-get-rest
+			    (reason-get-ras (try-get-reason try))))))
+  (IF (EQUALEXP (try-get-wff try) wff)
+   (LET ((factlist (IF (FACTS_RA ra2)
+                    (absfactlist2factlist (ra-get-value ra2))
+                    (trylist2factlist (ra-get-value ra2)))))
+    (IF (ptauteq (rewr-apply '(nnf reduce skolemize phexp)
+                             (facts_imp_wff-mak wff factlist)))
+     (SEQ
+      (proof-add-line wff
+                      (facts-union-dep factlist)
+                      (reason-mak 'MONADEQ (ras2-mak (wff_ra-mak wff)
+                                                     (facts_ra-mak factlist))))
+      (ol2prf-update try)
+      TRUE)
+     (MONADEQMSG wff factlist)))
+   (SEQ
+    (OL2PRF-ERROR1 try wff)
+    FALSE))))

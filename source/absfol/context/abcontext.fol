@@ -1,0 +1,59 @@
+;;;  basic functions for ctext manipulations
+;**********************************************************************
+;*  SYNTAX                                                            *
+;*   (econtext2context) (context2econtext CONTEXT)                    *
+;*   (cur-context-forget)                                             *
+;*                                                                    *
+;*  DESCRIPTION                                                       *
+;*   context2econtext takes a context and makes the current           *
+;*   context econtext2context returns the current context in its non  *
+;*   elementary version                                               *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM econtext2context ()
+ (context-mak
+  (elex2lex)
+  (esimstruct2simstruct)
+  (efacts2facts)
+  (eoutlines2outlines)))
+
+(DEFLAM context2econtext (CONTEXT)
+ (SEQ
+  (lex2elex (context-get-lex CONTEXT))
+  (simstruct2esimstruct (context-get-simstruct CONTEXT))
+  (facts2efacts (context-get-facts CONTEXT))
+  (outlines2eoutlines (context-get-outlines CONTEXT))))
+
+(DEFLAM cur-context-forget ()
+ (SEQ
+  (cur-simstruct-forget)
+  (cur-facts-forget)
+  (cur-outlines-forget)))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX                                                            *
+;*   (eoutlines2outlines)                                             *
+;*   (outlines2eoutlines OUTLINE)                                     *
+;*   (cur-outlines-forget)                                            *
+;*                                                                    *
+;*  DESCRIPTION                                                       *
+;*   The first converts an elemtary outline to an outline,            *
+;*   the second gets the non elementary view of OUTLINE,              *
+;*   the last forgets everithing of the current outline.              *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM eoutlines2outlines ()
+ (outlines-mak (eoutline2outline)(ollist-get)))
+
+(DEFLAM outlines2eoutlines (OUTLINE)
+ (SEQ
+  (outline2eoutline (outlines-get-outline OUTLINE))
+  (ollist-set (outlines-get-ollist OUTLINE))))
+
+(DEFLAM cur-outlines-forget ()
+ (SEQ
+  (cur-outline-forget)
+  (ollist-del)))

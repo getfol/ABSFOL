@@ -1,0 +1,122 @@
+;**********************************************************************
+;*  This file contains all the code necessary to elementary and       *
+;*  non elementary management of outlines.                            *
+;*  Here are all the functions which make the switch between          *
+;*  elementary and non elementary  view (and viceversa) of outline    *
+;*  defined in the context being in elemntary view.                   *
+;*                                                                    *
+;**********************************************************************
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (eoutline2outline)                                               *
+;*   (outline2eoutline OUTLINE)                                       *
+;*   (cur-outline-forget)                                             *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   The first converts from elementary to non elementary view.       *
+;*   The second converts from non elementary to elementary view.      *
+;*   The third forgive the current outline.                           *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB eoutline2outline () (outline-mak (curolname-get) (eol2ol)))
+
+(DEFSUB outline2eoutline (OUTLINE)
+ (SEQ
+  (curolname-set (outline-get-olname OUTLINE))
+  (ol2eol (outline-get-ol OUTLINE))))
+
+(DEFSUB cur-outline-forget ()
+ (SEQ
+  (curolname-del)
+  (cur-ol-forget)))
+
+(DEFSUB eol2ol ()
+ (ol-mak (curtrylist-get)
+	 (curtelist-get)
+	 (curtexiste-get)
+	 (curtlabel-get)))
+
+(DEFSUB ol2eol (OL)
+ (SEQ				
+  (curtrylist-set (ol-get-trylist OL))
+  (curtelist-set (ol-get-telist OL))
+  (curtexiste-set (ol-get-texiste OL))
+  (curtlabel-set (ol-get-tlabel OL))))
+
+(DEFSUB cur-ol-forget ()
+ (SEQ
+  (curtrylist-del)
+  (curtelist-del)
+  (curtexiste-del)
+  (curtlabel-del)))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (cur-outline-switchout)                                          *
+;*   (outline-switchin ONAME)                                         *
+;*   (outline-switch ONAME)                                           *
+;*   (cur-outline-copy ONAME)                                         *
+;*   (outline-get OUTLINE)                                            *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   The first puts the current outline to %OLLIST%.                  *
+;*   The second gets the outline named ONAME from %OLLIST%.           *
+;*   The third puts the current outline to %OLLIST% and gets the      *
+;*   outline named ONAME.                                             *
+;*   The fourth copies the current outline and put it in %OLLIST%     *
+;*   whith name ONAME.                                                *
+;*   The fifth change the currnet outline to OUTLINE.                 *
+;*                                                                    *
+;*  NOTE:                                                             *
+;*   The structure for memorizing an outline when switching           *
+;*   outline is the same used for memorizing the current outline when *
+;*   switching context.                                               *
+;*   Consequently the code for switching %CUROUTLINE% uses part of    *
+;*   the code used for switching the outline structure.               *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB cur-outline-switchout ()
+ (ollist-set-outline (eoutline2outline)))
+
+(DEFSUB outline-switchin (ONAME)
+ (outline2eoutline (ollist-get-outline ONAME)) )
+
+(DEFSUB outline-switch (ONAME)
+ (SEQ
+  (cur-outline-switchout)
+  (cur-outline-forget)
+  (outline-switchin ONAME)))
+
+(DEFSUB cur-outline-copy (ONAME)
+ (ollist-set-outline (outline-mak ONAME (eol2ol))))
+
+(DEFSUB outline-get (OUTLINE)
+ (SEQ
+  (cur-outline-forget)
+  (outline2eoutline OUTLINE)))
+
+(DEFSUB probed-cur-outline-switchout ()
+ (SEQ
+  (cur-outline-switchout)
+  (PRINTMES "I am switching out the current outline")))
+
+(DEFSUB probed-outline-switch (ONAME)
+ (SEQ
+  (outline-switch ONAME)
+  (PRINTMES2 "I am switching to the outline: " ONAME)))
+
+(DEFSUB probed-outline-switchin (ONAME)
+ (SEQ
+  (outline-switchin  ONAME)
+  (PRINTMES2 "I am switching from the current outline to:" ONAME)))
+
+(DEFSUB probed-outline-get (OUTLINE)
+ (SEQ
+  (outline-get OUTLINE)
+  (PRINTMES2 "outline-get: I changed outline to: "
+	     (outline-get-olname OUTLINE))))

@@ -1,0 +1,901 @@
+;*****************************************************************************
+;*                                                                           *
+;*                           absexp.rp                                       *
+;*                                                                           *
+;* The routines for reading and printing absexpressions.                     *
+;*                                                                           *
+;* 1- The reading of absexpressions.                                         *
+;* 2- The reading of "mapped symbols".                                       *
+;* 3- The printing of absexpressions.                                        *
+;*                                                                           *
+;*                                                                           *
+;* This file parses `abs-expressions', which are particular syntactic        *
+;* objects used in the declaration of the "rules" of an abstraction.         *
+;* A formal definition of an absexpression can be found on the next page.    *
+;* Informally:                                                               *
+;* - An absexpression is either an abswff or an absterm.                     *
+;* -- An abswff is either of the form WABS(wff) ("WABS" means "WFF ABSTRACT")*
+;* or it is recursively built from sub-absexpressions and abssymbols in the  *
+;* same way ordinary wffs are built from sub-expressions and symbols.        *
+;* -- An absterm is either in the form TABS(term) ("TABS" is "TERM ABSTRACT")*
+;* or it is recursively built from sub-absterms and abssymbols in the        *
+;* same way ordinary terms are built from sub-terms and symbols.             *
+;* --- An abssymbol is of the form*MAP[symbol], where `*' indicates          *
+;* the type of symbol mapping.                                               *
+;*                                                                           *
+;* As the structure of absexpression is the same of ordinary expressions',   *
+;* this file has been obtained by adapting  the file exp.rp.                 *
+;* Most routines are quite similar to the original ones in their structure.  *
+;* Some new functions have been added to handle "WABS" and "TABS"            *
+;* applications and abssymbols.                                              *
+;* Many low-level routines dealing with structure of ordinary expressions    *
+;* have been used as there has been no need to define new ones.              *
+;* Very few new low-level routines can be found in `absexp.hgk'.             *
+;*                                                                           *
+;* For the best understanding of this file see also `exp.rp'.                *
+;*                                                                           *
+;*****************************************************************************
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;*  THE GRAMMAR OF WRITTEN ABSEXPRESSIONS                                    *
+;*  -------------------------------------                                    *
+;*                                                                           *
+;*  The grammar of the written absexpressions is defined formally below.     *
+;*  The unexplained ground categories are all parsed by `symbols.rp'.        *
+;*  The unexplained abstract categories are all parsed by `abslang.rp'.      *
+;*                                                                           *
+;*   <abswff>       ::= <WABSappl>    |                                      *
+;*                      (<abswff>)    |                                      *
+;*                      <absconnappl> |                                      *
+;*                      <absquantwff> |                                      *
+;*                      <abswffif>    |                                      *
+;*                      <absawff>                                            *
+;*                                                                           *
+;*   <WABSappl>    ::=  WABS <wff>                                           *
+;*                                                                           *
+;*   <absconnappl> ::=  <sentconn> <abswff>          |   {<sentconn> prefix} *
+;*                      <abswff> <sentconn> <abswff>     {<sentconn> infix}  *
+;*                                                                           *
+;*   <absquantwff> ::=  <quant>                                              *
+;*                         (<mapindvar_1>[,] ...[,]<mapindvar_n>) . <abswff> *
+;*                                                                           *
+;*   <abswffif>    ::=  wffif <abswff> then <abswff> else <abswff>           *
+;*                                                                           *
+;*   <absawff>     ::=  <mapsentsym>  |                                      *
+;*                      <abspredappl> |                                      *
+;*                      <equabsappl>                                         *
+;*                                                                           *
+;*   <abspredappl> ::=  <mappredsym> (<absterm_1>[,] ... [,]<absterm_n>)     *
+;*                                                                           *
+;*   <equabsappl>  ::=  <absterm> = <absterm>                                *
+;*                                                                           *
+;*                                                                           *
+;*   <absterm>     ::=  <TABSappl>    |                                      *
+;*                      (<absterm>)   |                                      *
+;*                      <absfunappl>  |                                      *
+;*                      <abstermif>   |                                      *
+;*                      <mapindsym>                                          *
+;*                                                                           *
+;*   <TABSappl>    ::=  TABS <term>                                          *
+;*                                                                           *
+;*   <abstermif>   ::=  trmif <abswff> then <absterm> else <absterm>         *
+;*                                                                           *
+;*   <absfunappl>  ::=  <mapfunsym>(<absterm_1>[,] ... [,]<absterm_n>)       *
+;*                                                                           *
+;*                                                                           *
+;*                 "MAPPED SYMBOLS"                                          *
+;*                                                                           *
+;*   <mapsentsym>  ::=  SMAP[<sentsym>] | PSMAP[<predsym>]                   *
+;*   <mappredsym>  ::=  PMAP[<predsym>]                                      *
+;*   <mapfunsym>   ::=  FUMAP[<funsym>]                                      *
+;*   <mapindsym>   ::=  IMAP[<indsym>]  | FIMAP[<funsym>]                    *
+;*                                                                           *
+;*   <mapindvar>   ::=  IMAP[<indvar>]                                       *
+;*                                                                           *
+;*****************************************************************************
+
+
+
+;******************************************************************************
+;*                                                                            *
+;*  1 - The  reading of absexpressions                                        *
+;*                                                                            *
+;*  The absexpression parsing routines parse a written absexpression and      *
+;*  return the corresponding <ABSEXP> data structure, which is closed to      *
+;*  the one of ordinary expressions as defined in "exp.hgk".                  *
+;*  Its parsing functions thus provide a translation from the external        *
+;*  "visible" grammar detailed above (syntactic categories in lower case)     *
+;*  to the internal "hidden" grammar of the representing data structures      *
+;*  (syntactic categories in upper case).                                     *
+;*                                                                            *
+;*  For the best understanding of the parsing strategy see file `exp.rp'.     *
+;*                                                                            *
+;******************************************************************************
+
+
+;******************************************************************************
+;*                                                                            *
+;*  1.1 Parsing of abswffs.                                                   *
+;*                                                                            *
+;*  SYNTAX:                                                                   *
+;*     (ABSWFFREP#)                                                           *
+;*     (ABSWFFREP@)                                                           *
+;*     (ABSWFF#)                                                              *
+;*     (ABSWFF@)                                                              *
+;*     (abswff+pri# PRI)                                                      *
+;*     (abswff+pri@ PRI)                                                      *
+;*     (abswffcontinue! ABSWFFSOFAR PRI)                                      *
+;*                                                                            *
+;*  DESCRIPTION:                                                              *
+;*   ABSWFFREP#      Parses a list of abswffs.                                *
+;*   ABSWFFREP@      Parses a list of abswffs optionally.                     *
+;*   ABSWFF#         Parses an abswff.                                        *
+;*   ABSWFF@         Parses an abswff optionally.                             *
+;*   abswff+pri#     Obliged parsing of `abswff+pri@'.                        *
+;*   abswff+pri@     Parses for a <abswff> taking speech-act priorities into  *
+;*                   account. The <abswff> being parsed occurs as argument to *
+;*                   a connective with binding priority PRI. Parses until an  *
+;*                   infix connective with weaker binding priority is         *
+;*                   encountered. A binding priority of 0 is used at the start*
+;*                   of the parsing.                                          *
+;*   abswffcontinue! The <abswff> ABSWFFSOFAR has been parsed with priority   *
+;*                   PRI. `abswffcontinue!' checks for an infix connective    *
+;*                   that has a higher binding priority and if one is found   *
+;*                   the parsing is continued accordingly.                    *
+;*                                                                            *
+;******************************************************************************
+
+(DEFLAM ABSWFFREP# () (LISTSCAN# 'ABSWFF# 'ABSWFF@ "A <abswff>" "<abswff>"))
+
+(DEFLAM ABSWFFREP@ () (LISTSCAN! 'ABSWFF@ "<abswff>"))
+
+(DEFLAM ABSWFF# () (REQ# 'ABSWFF@ "The scanner" "an <abswff>"))
+
+(DEFLAM ABSWFF@ () (abswff+pri@ 0))
+
+
+(DEFLAM abswff+pri# (PRI)
+   (LET ((ABSWFF (abswff+pri@ PRI)))
+     (IF (IST ABSWFF) ABSWFF
+     (REMSG2 "The scanner" "a <abswff>"))))
+
+
+(DEFLAM abswff+pri@ (PRI)
+   (LET ((ABSWFF (WABSSYMAPPL@)))
+   (IF (IST ABSWFF) (abswffcontinue! ABSWFF PRI)
+   (LET ((ABSWFF (BRACKETED-ABSWFF@)))
+   (IF (IST ABSWFF) (abswffcontinue! ABSWFF PRI)
+   (LET ((ABSWFF (PREFIX-ABSCONNAPPL@)))
+   (IF (IST ABSWFF) (abswffcontinue! ABSWFF PRI)
+   (LET ((ABSWFF (ABSQUANTWFF@)))
+   (IF (IST ABSWFF) (abswffcontinue! ABSWFF PRI)
+   (LET ((ABSWFF (ABSWFFIF@)))
+   (IF (IST ABSWFF) (abswffcontinue! ABSWFF PRI)
+   (LET ((ABSWFF (ABSAWFF@)))
+   (IF (IST ABSWFF) (abswffcontinue! ABSWFF PRI)
+   FVAL )))))))))))))
+
+
+(DEFLAM abswffcontinue! (ABSWFFSOFAR PRI)
+   (LET ((S (SCANSTATUS-GET))
+         (C (SENTCONN@)))
+     (IF (IST C)
+       (IF (INFIX C)
+         (IF (GE (lbp C) PRI)
+           (LET ((ABSWFF2 (abswff+pri@ (rbp C))))
+             (IF (IST ABSWFF2)
+               (abswffcontinue! (connappl2-mak C ABSWFFSOFAR ABSWFF2) PRI)
+             (SEQ (SCANSTATUS-RESTORE S) ABSWFFSOFAR)))
+         (SEQ (SCANSTATUS-RESTORE S) ABSWFFSOFAR))
+       (SEQ (SCANSTATUS-RESTORE S) ABSWFFSOFAR))
+     ABSWFFSOFAR )))
+
+
+
+;******************************************************************************
+;*                                                                            *
+;*  1.1.1  Parenthesised <abswff>s.                                           *
+;*                                                                            *
+;*  DESCRIPTION:                                                              *
+;*     BRACKETED-ABSWFF@  Parses a parenthesised <abswff>.                    *
+;*                                                                            *
+;******************************************************************************
+(DEFLAM BRACKETED-ABSWFF@ ()
+   (LET ((S (SCANSTATUS-GET)))
+     (IF (IST (TK@ LPAR))
+       (LET ((BRACKETED-ABSWFF (ABSWFF@)))
+         (IF (AND (IST BRACKETED-ABSWFF)
+                  (TK@ RPAR))
+           BRACKETED-ABSWFF
+         (SEQ (SCANSTATUS-RESTORE S) FVAL) ))
+     FVAL )))
+
+
+;******************************************************************************
+;*                                                                            *
+;*  1.1.2  Applications of `WABS'.                                            *
+;*                                                                            *
+;*  DESCRIPTION:                                                              *
+;*     WABSSYMAPPL@   Parses an application of the prefix connective "WABS".  *
+;*                    Here "WABS" is seen as a prefix connective.             *
+;*                                                                            *
+;******************************************************************************
+(DEFLAM WABSSYMAPPL@ ()
+    (LET ((S (SCANSTATUS-GET))
+          (C (SENTCONN@)))
+      (IF (IST C)
+        (IF (AND (PREFIX C) (EQUAL (label2sym 'WABS)  C))
+          (connappl1-mak C (wff+pri# (prbp C))) ; wff+pri# e non abswff+pri# !
+          (SEQ (SCANSTATUS-RESTORE S) FVAL) )
+        FVAL )))
+
+
+
+;******************************************************************************
+;*                                                                            *
+;*  1.1.3  Abstract application of a prefix connective.                       *
+;*                                                                            *
+;*  DESCRIPTION:                                                              *
+;*     PREFIX-ABSCONNAPPL@  Parses an <absconnappl> with a prefix connective. *
+;*                                                                            *
+;******************************************************************************
+(DEFLAM PREFIX-ABSCONNAPPL@ ()
+   (LET ((S (SCANSTATUS-GET))
+         (C (SENTCONN@)))
+     (IF (IST C)
+       (IF (PREFIX C)
+         (connappl1-mak C (abswff+pri# (prbp C)))
+       (SEQ (SCANSTATUS-RESTORE S) FVAL) )
+     FVAL )))
+
+
+;******************************************************************************
+;*                                                                            *
+;*  1.1.4  Abstract application of quantifier.                                *
+;*                                                                            *
+;* DESCRIPTION:                                                               *
+;*  ABSQUANTWFF#   Obliged parsing of quantified abswffs.                     *
+;*  ABSQUANTWFF@   Parsing of quantified abswffs.                             *
+;*                 There is a problem parsing quantifiers due to the binding  *
+;*                 precedence of the quantifier over the connectives.         *
+;*                 Quantifiers don't have a speech act!                       *
+;*                 The problem is solved by treating "<quant> v1 ... vn."     *
+;*                 as a prefix operator and giving it the default prefix      *
+;*                 binding priority.                                          *
+;*  ABSAPPLQUANT   Builds a quantified abs-expression.                        *
+;*                                                                            *
+;******************************************************************************
+
+(DEFLAM ABSQUANTWFF# () (REQ# 'ABSQUANTWFF@ "The scanner" "a <absquantwff>") )
+
+(DEFLAM ABSQUANTWFF@ ()
+   (LET ((Q (QUANT@)))
+     (IF (IST Q)
+       (LET ((ABSVARLIST (MAPINDVARREP#)))
+        (LET ((DUMMY1 (TK# DOT "A quantifier" "a full-stop")))
+         (LET ((ABSMATRIX (abswff+pri# DefaultPRBP))) ;defaulbinding priority.
+         (ABSAPPLQUANT Q ABSVARLIST ABSMATRIX))))
+       FVAL )))
+
+
+(DEFLAM ABSAPPLQUANT (Q ABSVARLIST ABSMATRIX)
+   (IF (MTL? ABSVARLIST) 
+     ABSMATRIX
+     (mkquant Q (CAR ABSVARLIST) (ABSAPPLQUANT Q (CDR ABSVARLIST) ABSMATRIX)))) 
+
+
+;******************************************************************************
+;*                                                                            *
+;*  1.1.5  Abstract-IF-WFFS.                                                  *
+;*                                                                            *
+;*  DESCRIPTION:                                                              *
+;*     ABSWFFIF#    Obliged parsing of an abstract-IF-WFF.                    *
+;*     ABSWFFIF@    Parsing of an abstract-IF-WFF.                            *
+;*                                                                            *
+;******************************************************************************
+
+(DEFLAM ABSWFFIF# () (REQ# 'ABSWFFIF@ "The scanner" "an <if-abswff>"))
+
+(DEFLAM ABSWFFIF@ ()
+   (IF (IST (TK@ 'wffif))
+     (LET ((X (ABSWFF#)))
+      (LET ((DUMMY1 (TK# 'then "A `abswffif'" "a `then'")))
+       (LET ((Y (ABSWFF#)))
+        (LET ((DUMMY2 (TK# 'else "A `abswffif'" "an `else'")))
+         (LET ((Z (ABSWFF#)))
+          (mkwffif X Y Z))))))
+     FVAL)) 
+
+
+;******************************************************************************
+;*                                                                            *
+;*  1.1.6  Abstract atomic wffs                                               *
+;*                                                                            *
+;*  DESCRIPTION:                                                              *
+;*     ABSAWFF#    Obliged parsing of an abstract atomic wff.                 *
+;*     ABSAWFF@    Parsing of an abstract atomic wff.                         *
+;*                                                                            *
+;******************************************************************************
+
+(DEFLAM ABSAWFF# () (REQ# 'ABSAWFF@ "The scanner" "an <absawff>") )
+
+(DEFLAM ABSAWFF@ ()
+   (LET ((MAPSENTSYM (MAPSENTSYM@)))
+     (IF (IST MAPSENTSYM) 
+       MAPSENTSYM
+       (ABSPREDAPPL@) )))
+
+
+;******************************************************************************
+;*                                                                            *
+;*  1.1.7  Abstract application of predicates.                                *
+;*                                                                            *
+;*  DESCRIPTION:                                                              *
+;*     ABSPREDAPPL@          Parses an abstract predicate application.        *
+;*     PREFIX-ABSPREDAPPL@   Parses an abstract prefix predicate application. *
+;*     INFIX-ABSPREDAPPL@    Parses an abstract infix predicate application.  *
+;*     APPLY-ABSPREDAPPL@    Parses an abstract predicate application such    *
+;*                           that the predicate is neither prefix nor infix.  *
+;*     EQUABSAPPL@           A Particular <abspredappl> of the form           *
+;*                           <absterm> = <absterm>.                           *
+;*                           Note that it is not of the form                  *
+;*                           <absterm> PMAP[=] <absterm>,                     *
+;*                           so that it is not a mere instance of             *
+;*                           INFIX-ABSPREDAPPL@ !                             *
+;*                                                                            *
+;******************************************************************************
+(DEFLAM ABSPREDAPPL@ ()
+   (LET ((ABSPREDAPPL (PREFIX-ABSPREDAPPL@)))
+   (IF (IST ABSPREDAPPL) ABSPREDAPPL
+   (LET ((EQUABSAPPL  (EQUABSAPPL@)))
+   (IF (IST EQUABSAPPL) EQUABSAPPL
+   (LET ((ABSPREDAPPL (INFIX-ABSPREDAPPL@)))
+   (IF (IST ABSPREDAPPL) ABSPREDAPPL
+   (APPLY-ABSPREDAPPL@) )))))))
+
+
+(DEFLAM PREFIX-ABSPREDAPPL@ ()
+   (LET ((S (SCANSTATUS-GET))
+         (P (MAPPREDSYM@)))
+     (IF (IST P)
+       (IF (PREFIX P)
+         (predappl1-mak P (ABSTERM#))
+       (SEQ (SCANSTATUS-RESTORE S) FVAL) )
+     FVAL )))
+
+
+(DEFLAM  EQUABSAPPL@ ()
+   (LET ((S (SCANSTATUS-GET))
+         (ARG1 (ABSTERM@)))
+     (IF (IST ARG1)
+       (LET ((EQU (TK@ '=)))
+         (IF (IST EQU) 
+           (mkequ ARG1 (ABSTERM#))
+           (SEQ (SCANSTATUS-RESTORE S) FVAL) ))
+     FVAL )))
+
+
+(DEFLAM INFIX-ABSPREDAPPL@ ()
+   (LET ((S (SCANSTATUS-GET))
+         (ARG1 (ABSTERM@)))
+     (IF (IST ARG1)
+       (LET ((P (MAPPREDSYM@)))
+         (IF (IST P) 
+           (IF (INFIX P)
+             (predappl2-mak P ARG1 (ABSTERM#))
+           (SEQ (SCANSTATUS-RESTORE S) FVAL) )
+         (SEQ (SCANSTATUS-RESTORE S) FVAL) ))
+     FVAL )))
+
+
+
+(DEFLAM APPLY-ABSPREDAPPL@ ()
+   (LET ((P (MAPPREDSYM@)))
+     (IF (IST P)
+      (predappl-mak P (ABSARGSOF#))
+     FVAL )))
+
+;******************************************************************************
+;*                                                                            *
+;*  1.2 Parsing of absterms.                                                  *
+;*                                                                            *
+;*  SYNTAX:                                                                   *
+;*     (ABSTERMREP#)                                                          *
+;*     (ABSTERM#)                                                             *
+;*     (ABSTERM@)                                                             *
+;*     (absterm+pri# PRI)                                                     *
+;*     (absterm+pri@ PRI)                                                     *
+;*     (abstermcontinue! ABSTERMSOFAR PRI)                                    *
+;*                                                                            *
+;*  DESCRIPTION:                                                              *
+;*   ABSTERMREP#     Parses a list of absterms.                               *
+;*   ABSTERM#        Parses an absterm.                                       *
+;*   ABSTERM@        Parses an absterm optionally.                            *
+;*   absterm+pri#    Obliged parsing of `absterm+pri@'.                       *
+;*   absterm+pri@    Parses for a <absterm> taking speech-act priorities into *
+;*                   account. The <absterm> being parsed occurs as argument to*
+;*                   a connective with binding priority PRI. Parses until an  *
+;*                   infix connective with weaker binding priority is         *
+;*                   encountered. A binding priority of 0 is used at the start*
+;*                   of the parsing.                                          *
+;*   abstermcontinue! The <absterm> ABSTERMSOFAR has been parsed with priority*
+;*                   PRI. `abstermcontinue!' checks for an infix connective   *
+;*                   that has a higher binding priority and if one is found   *
+;*                   the parsing is continued accordingly.                    *
+;*                                                                            *
+;******************************************************************************
+
+(DEFLAM ABSTERMREP# () (LISTSCAN# 'ABSTERM# 'ABSTERM@ "A <absterm>" "<absterm>"))
+
+(DEFLAM ABSTERM# () (REQ# 'ABSTERM@ "The scanner" "a <absterm>"))
+
+(DEFLAM ABSTERM@ () (absterm+pri@ 0))
+
+(DEFLAM absterm+pri# (PRI)
+   (LET ((ABSTRM (absterm+pri@ PRI)))
+     (IF (IST ABSTRM) ABSTRM
+     (REMSG2 "The scanner" "a <absterm>"))))
+
+
+(DEFLAM absterm+pri@ (PRI)
+   (LET ((ABSTERM (TABSSYMAPPL@)))
+   (IF (IST ABSTERM) (abstermcontinue! ABSTERM PRI)
+   (LET ((ABSTERM (BRACKETED-ABSTERM@)))
+   (IF (IST ABSTERM) (abstermcontinue! ABSTERM PRI)
+   (LET ((ABSTERM (PREFIX-ABSFUNAPPL@)))
+   (IF (IST ABSTERM) (abstermcontinue! ABSTERM PRI)
+   (LET ((ABSTERM (APPLY-ABSFUNAPPL@)))
+   (IF (IST ABSTERM) (abstermcontinue! ABSTERM PRI)
+   (LET ((ABSTERM (ABSTERMIF@)))
+   (IF (IST ABSTERM) (abstermcontinue! ABSTERM PRI)
+   (LET ((ABSTERM (MAPINDSYM@)))
+   (IF (IST ABSTERM) (abstermcontinue! ABSTERM PRI)
+   FVAL )))))))))))))
+
+
+(DEFLAM abstermcontinue! (ABSTERMSOFAR PRI)
+   (LET ((S (SCANSTATUS-GET))
+         (F (MAPFUNSYM@)))
+     (IF (IST F)
+       (IF (INFIX F)
+         (IF (GE (lbp F) PRI)
+           (LET ((ABSTERM2 (absterm+pri@ (rbp F))))
+             (IF (IST ABSTERM2)
+               (abstermcontinue! (funappl2-mak F ABSTERMSOFAR ABSTERM2) PRI)
+             (SEQ (SCANSTATUS-RESTORE S) ABSTERMSOFAR)))
+         (SEQ (SCANSTATUS-RESTORE S) ABSTERMSOFAR))
+       (SEQ (SCANSTATUS-RESTORE S) ABSTERMSOFAR))
+     ABSTERMSOFAR )))
+
+
+
+;******************************************************************************
+;*                                                                            *
+;*  1.2.1  Parenthesised <absterm>s.                                          *
+;*                                                                            *
+;*  DESCRIPTION:                                                              *
+;*     BRACKETED-ABSTERM@  Parses a parenthesised <absterm>.                  *
+;*                                                                            *
+;******************************************************************************
+(DEFLAM BRACKETED-ABSTERM@ ()
+   (LET ((S (SCANSTATUS-GET)))
+     (IF (IST (TK@ LPAR))
+       (LET ((BRACKETED-ABSTERM (ABSTERM@)))
+         (IF (AND (IST BRACKETED-ABSTERM)
+                  (TK@ RPAR))
+           BRACKETED-ABSTERM
+         (SEQ (SCANSTATUS-RESTORE S) FVAL) ))
+     FVAL )))
+
+
+;******************************************************************************
+;*                                                                            *
+;*  1.2.2  Applications of `TABS'.                                            *
+;*                                                                            *
+;*  DESCRIPTION:                                                              *
+;*     TABSSYMAPPL@   Parses an application of the prefix connective "TABS".  *
+;*                    Here "TABS" is seen as a prefix connective.             *
+;*                                                                            *
+;******************************************************************************
+(DEFLAM TABSSYMAPPL@ ()
+   (LET ((S (SCANSTATUS-GET))
+         (TABSSYM (FUNSYM@)))
+     (IF (IST TABSSYM)
+       (IF (AND (PREFIX TABSSYM) (EQ TABSSYM (label2sym 'TABS)))
+         (funappl1-mak TABSSYM (term+pri# (prbp TABSSYM)))
+       (SEQ (SCANSTATUS-RESTORE S) FVAL) )
+     FVAL )))
+
+
+
+
+;******************************************************************************
+;*                                                                            *
+;*  1.1.3  Abstract application of functions.                                 *
+;*                                                                            *
+;*  DESCRIPTION:                                                              *
+;*     ABSFUNAPPL@          Parses an abstract function application.          *
+;*     PREFIX-ABSFUNAPPL@   Parses an abstract prefix function application.   *
+;*     INFIX-ABSFUNAPPL@    Parses an abstract infix function application.    *
+;*     APPLY-ABSFUNAPPL@    Parses an abstract function application such      *
+;*                          that the function is neither prefix nor infix.    *
+;*     ABSARGSOF#           Parses (<absterm_1>[,]...[,]<absterm_n>), where   *
+;*                          n is the arity of ABSAPPLABSSYM, returns a list   *
+;*                          of the absterms. It is used for direct predicate  *
+;*                          and function applications.                        *
+;*                                                                            *
+;******************************************************************************
+
+(DEFLAM PREFIX-ABSFUNAPPL@ ()
+   (LET ((S (SCANSTATUS-GET))
+         (F (MAPFUNSYM@)))
+     (IF (IST F)
+       (IF (PREFIX F)
+         (funappl1-mak F (absterm+pri# (prbp F)))
+       (SEQ (SCANSTATUS-RESTORE S) FVAL) )
+     FVAL )))
+
+
+(DEFLAM APPLY-ABSFUNAPPL@ ()
+   (LET ((F (MAPFUNSYM@)))
+     (IF (IST F)
+       (funappl-mak F (ABSARGSOF#))
+     FVAL )))
+
+
+(DEFLAM ABSARGSOF# ()
+   (LET ((DUMMY1 (TK# LPAR "An absapplication" "a left parenthesis")))
+    (LET ((ARGLIST (ABSTERMREP#)))
+     (LET ((DUMMY2 (TK# RPAR "An absapplication" "a right parenthesis")))
+       ARGLIST))))
+
+
+;******************************************************************************
+;*                                                                            *
+;*  1.2.4  Abstract-IF-TERMS.                                                 *
+;*                                                                            *
+;*  DESCRIPTION:                                                              *
+;*     ABSTERMIF#    Obliged parsing of an abstract-IF-TERM.                  *
+;*     ABSTERMIF@    Parsing of an abstract-IF-TERM.                          *
+;*                                                                            *
+;******************************************************************************
+
+(DEFLAM ABSTERMIF# () (REQ# 'ABSTERMIF@ "The scanner" "an <ifabsterm>") )
+
+(DEFLAM ABSTERMIF@ ()
+   (IF (IST (TK@ 'trmif))
+     (LET ((X (ABSWFF#)))
+      (LET ((DUMMY1 (TK# 'then "A `abstrmif'" "a `then'")))
+       (LET ((Y (ABSTERM#)))
+        (LET ((DUMMY2 (TK# 'else "A `abstrmif'" "an `else'")))
+         (LET ((Z (ABSTERM#)))
+       (mktrmif X Y Z))))))
+     FVAL ))
+
+
+
+
+;******************************************************************************
+;*                                                                            *
+;*   2 - The reading of "mapped symbols"                                      *
+;*                                                                            *
+;*   This section includes all the routines to parse the                      *
+;*   "mapped symbols" in the form *MAP[<*sym>]                                *
+;*                                                                            *
+;*                                                                            *
+;*  DESCRIPTION:                                                              *
+;*                                                                            *
+;*     MAPINDSYM#            Parses individual mapped symbols.                *
+;*     MAPINDSYM@            Parses optionally individual mapped symbols.     *
+;*                           Two kinds of mapindsyms are allowed:             *
+;*                           `IMAP[<indsym>]' or `FIMAP[<funsym>]'            *
+;*                           in the latter an indsym is seen as a funsym      *
+;*                           of arity 0.                                      *
+;*     MAPINDVARREP#         Parses a list of individual mapped variables.    *
+;*     MAPINDVAR#            Parses individual mapped variables.              *
+;*     MAPINDVAR@            Parses optionally individual mapped variables.   *
+;*     IND2MAPINDSYM@        Parses mapped individual symbols                 *
+;*                           in the form `IMAP[<individual symbol>]'.         *
+;*     FUN2MAPINDSYM@        Parses mapped individual symbols in the form     *
+;*                           `FIMAP[function symbol>]'. It allows to          *
+;*                           see a Function of arity 0 as a individual.       *
+;*     MAPSENTSYM#           Parses sentence mapped symbols.                  *
+;*     MAPSENTSYM@           Parses optionally sentence mapped symbols.       *
+;*                           Two kinds of mapsentsyms are allowed:            *
+;*                           `SMAP[<sentsym>]' or `PSMAP[<predsym>]'          *
+;*                           in the latter a sentsym is seen as a predsym     *
+;*                           of arity 0.                                      *
+;*     SENT2MAPSENTSYM@      Parses mapped sentence symbols                   *
+;*                           in the form `SMAP[<sentence symbol>]'.           *
+;*     PRED2MAPSENTSYM@      Parses mapped sentence symbols in the form       *
+;*                           `PSMAP[predicate symbol>]'. It allows to         *
+;*                           see a Predicate of arity 0 as a sentence.        *
+;*     MAPFUNSYM#            Parses function mapped symbols.                  *
+;*     MAPFUNSYM@            Parses mapped function symbols                   *
+;*                           in the form `FUMAP[<function symbol>]'.          *
+;*     MAPPREDSYM#           Parses predicate mapped symbols.                 *
+;*     MAPPREDSYM@           Parses mapped predicate symbols                  *
+;*                           in the form `PMAP[<predicate symbol>]'.          *
+;*                                                                            *
+;******************************************************************************
+
+
+(DEFLAM MAPINDSYM# () (REQ# (QUOTE MAPINDSYM@) 
+   "The parser" "IMAP[<indsym>] or FIMAP[<funsym>]"))
+
+(DEFLAM MAPINDSYM@ ()
+ (LET ((IND (IND2MAPINDSYM@) ))
+  (IF (IST IND)
+   IND
+   (FUN2MAPINDSYM@))))
+   
+
+
+(DEFLAM MAPINDVARREP# () (LISTSCAN# 'MAPINDVAR# 'MAPINDVAR@ 
+  "IMAP[<indvar>]" "IMAP[<indvar>]") )
+
+(DEFLAM MAPINDVAR# () (REQ# (QUOTE MAPINDVAR@) 
+   "The parser" "IMAP[<indvar>]"))
+
+(DEFLAM MAPINDVAR@ ()
+  (IFN (IST (TKC@ 'IMAP)) FVAL
+   (SEQ 
+    (TK# '[ "The parser" "an open square bracket `['")
+    (LET ((ind (INDVAR#)))
+     (SEQ 
+      (TK# '] "The parser" "a closed square bracket `]'")
+      (mapsym-mak 'IMAP ind))))))
+
+
+(DEFLAM IND2MAPINDSYM@ ()
+  (IFN (IST (TKC@ 'IMAP)) FVAL
+   (SEQ 
+    (TK# '[ "The parser" "an open square bracket `['")
+    (LET ((ind (INDSYM#)))
+     (SEQ 
+      (TK# '] "The parser" "a closed square bracket `]'")
+      (mapsym-mak 'IMAP ind))))))
+
+
+
+(DEFLAM FUN2MAPINDSYM@ ()
+  (IFN (IST (TKC@ 'FIMAP)) FVAL
+   (SEQ 
+    (TK# '[ "The parser" "an open square bracket `['")
+    (LET ((fun (FUNSYM#)))
+     (SEQ 
+      (TK# '] "The parser" "a closed square bracket `]'")
+      (mapsym-mak 'FIMAP fun))))))
+
+
+
+(DEFLAM MAPSENTSYM# () (REQ# (QUOTE MAPSENTSYM@) 
+   "The parser" "SMAP[<sentsym>] or PSMAP[<predsym>]"))
+
+
+(DEFLAM MAPSENTSYM@ ()
+ (LET ((SENT (SENT2MAPSENTSYM@) ))
+  (IF (IST SENT)
+   SENT
+   (PRED2MAPSENTSYM@))))
+   
+    
+(DEFLAM SENT2MAPSENTSYM@ ()
+  (IFN (IST (TKC@ 'SMAP)) FVAL
+   (SEQ 
+    (TK# '[ "The parser" "an open square bracket `['")
+    (LET ((sent (SENTSYM#)))
+     (SEQ 
+      (TK# '] "The parser" "a closed square bracket `]'")
+      (mapsym-mak 'SMAP sent))))))
+
+
+(DEFLAM PRED2MAPSENTSYM@ ()
+  (IFN (IST (TKC@ 'PSMAP)) FVAL
+   (SEQ 
+    (TK# '[ "The parser" "an open square bracket `['")
+    (LET ((pred (PREDSYM#)))
+     (SEQ 
+      (TK# '] "The parser" "a closed square bracket `]'")
+      (mapsym-mak 'PSMAP pred))))))
+
+
+
+(DEFLAM MAPFUNSYM# () (REQ# (QUOTE MAPFUNSYM@) 
+   "The parser" "FUMAP[<funsym>]"))
+
+(DEFLAM MAPFUNSYM@ ()
+  (IFN (IST (TKC@ 'FUMAP)) FVAL
+   (SEQ 
+    (TK# '[ "The parser" "an open square bracket `['")
+    (LET ((fun (FUNSYM#)))
+     (SEQ 
+      (TK# '] "The parser" "a closed square bracket `]'")
+      (mapsym-mak 'FUMAP fun))))))
+
+
+(DEFLAM MAPPREDSYM# () (REQ# (QUOTE MAPPREDSYM@) 
+   "The parser" "PMAP[<predsym>]"))
+
+(DEFLAM MAPPREDSYM@ ()
+  (IFN (IST (TKC@ 'PMAP)) FVAL
+   (SEQ 
+    (TK# '[ "The parser" "an open square bracket `['")
+    (LET ((pred (PREDSYM#)))
+     (SEQ 
+      (TK# '] "The parser" "a closed square bracket `]'")
+      (mapsym-mak 'PMAP pred))))))
+
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 3 - The printing of absexpressions                                        *
+;*                                                                           *
+;*   (printabsexp ABSEXP)                                                    *
+;*                                                                           *
+;*  Translates ABSEXP from its internal <ABSEXP> representation to its extern*
+;*  readable form (the translation can be reversed by the absexpression      *
+;*  parsing routines). The readable form is printed as it is translated.     *
+;*                                                                           *
+;*  The translation is not unique because of the optional use of parentheses.*
+;*  For the sake of readability "printabsexp" places parentheses around all  *
+;*  except the most external infix applications and conditionals.            *
+;*                                                                           *
+;*  SYNTAX:                                                                  *
+;*     (printabsexp          ABSEXP)                                         *
+;*     (printabsexp+parenth  ABSEXP PARENTH)                                 *
+;*     (printabslabel        SYM)                                            *
+;*     (printabslabels       SYMLIST)                                        *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*     printabsexp            Prints an abs-expression.                      *
+;*     printabsexp+parenth    Prints an abs-expression. PARENTH is a flag.   *
+;*                            If TVAL then infix applications and            *
+;*                            <ifabsexp>s are parenthisised.                 *
+;*     printabslabel          Prints the label of a symbol.                  *
+;*     printabslabels         Prints the labels of a list of symbols.        *
+;*****************************************************************************
+
+(DEFLAM printabsexp (ABSEXP) (printabsexp+parenth ABSEXP FVAL))
+
+(DEFLAM printabsexp+parenth (ABSEXP PARENTH)
+  (IF (SIMPLE ABSEXP) (printabslabel ABSEXP)
+  (IF (QUANTWFF ABSEXP) (printabsquant ABSEXP)
+  (IF (IFEXP ABSEXP) (printabsif ABSEXP PARENTH)
+  (LET ((FUNC (appl-get-functor ABSEXP)))
+    (IF (PREFIX FUNC) (printabsprefix ABSEXP PARENTH)
+    (IF (INFIX FUNC) (printabsinfix ABSEXP PARENTH)
+    (printabsappl ABSEXP) )))))))
+
+
+(DEFLAM printabslabel (SYM) 
+ (IF (EQUAL SYM '=)
+  (HGKM-PRINC '=)
+  (IFN (IST (mapsym-get-type SYM))
+   (HGKM-PRINC (outnam SYM))
+   (HGKM-PRINC (mapsym-mak (mapsym-get-type SYM)
+                           (outnam (mapsym2sym SYM)))))))
+
+(DEFLAM printabslabels (SYMLIST) 
+ (IF (MTL? SYMLIST) (NOP)
+  (SEQ
+   (printabslabel (FIRST SYMLIST))
+   (HGKM-PRINC "  ")
+   (printabslabels (REST SYMLIST)))))
+
+
+
+
+
+
+;******************************************************************************
+;*                                                                            *
+;*  3.1  Printing of different kinds of abs-expressions.                      *
+;*                                                                            *
+;*  SYNTAX:                                                                   *
+;*     (printabsquant     ABSQUANTWFF)                                        *
+;*     (printabsif        IFABSEXP PARENTH)                                   *
+;*     (printabsprefix    ABSAPPL1 PARENTH)                                   *
+;*     (printabsinfix     ABSAPPL1 PARENTH)                                   *
+;*     (printabsappl      ABSAPPL)                                            *
+;*     (printabsargs      ARGLIST)                                            *
+;*                                                                            *
+;*  DESCRIPTION:                                                              *
+;*     printabsquant   Prints a quantified abswff.                            *
+;*     printabsif      Prints a conditional abs-expression.                   *
+;*     printabsprefix  Prints an application of a prefix symbol.              *
+;*     printabsinfix   Prints an application of an infix symbol.              *
+;*     printabsappl    Prints a generical application of a symbol,            *
+;*                     which is neither prefix nor infix                      *
+;*     printabsargs    Prints a list of arguments.                            *
+;*                                                                            *
+;******************************************************************************
+
+(DEFLAM printabsquant (ABSQUANTWFF)
+  (SEQ
+    (printabslabel (quantof ABSQUANTWFF))
+    (HGKM-PRINC " ")
+    (printabslabel (bvarof ABSQUANTWFF))
+    (printabsquantcontinue (quantof ABSQUANTWFF) (matrix ABSQUANTWFF)) ))
+
+(DEFLAM printabsquantcontinue (QUANT ABSBODY)
+  (IF (NOT (AND (ABSQUANTWFF ABSBODY) (EQ (quantof ABSBODY) QUANT) ))
+    (SEQ (HGKM-PRINC ". ")
+         (printabsexp+parenth ABSBODY TVAL))
+  (SEQ 
+    (HGKM-PRINC " ") 
+    (printabslabel (bvarof ABSBODY))
+    (printabsquantcontinue QUANT (matrix ABSBODY)) )))
+
+
+(DEFLAM printabsif (IFABSEXP PARENTH)
+  (SEQ
+    (IF (IST PARENTH) (HGKM-PRINC "(") (NOP))
+    (HGKM-PRINC (condof IFABSEXP))
+    (HGKM-PRINC " ")
+    (printabsexp+parenth (ifof IFABSEXP) TVAL)
+    (HGKM-PRINC " then ")
+    (printabsexp+parenth (thenof IFABSEXP) TVAL)
+    (HGKM-PRINC " else ")
+    (printabsexp+parenth (elseof IFABSEXP) TVAL)
+    (IF (IST PARENTH) (HGKM-PRINC ")") (NOP)) ))
+
+
+(DEFLAM printabsprefix (ABSAPPL1 PARENTH)
+  (SEQ
+    (IF (IST PARENTH) (HGKM-PRINC "(") (NOP))
+    (printabslabel (appl-get-functor ABSAPPL1))
+    (HGKM-PRINC " ")
+    (printabsexp+parenth (appl1-get-arg ABSAPPL1) TVAL)
+    (IF (IST PARENTH) (HGKM-PRINC ")") (NOP)) ))
+
+
+(DEFLAM printabsinfix (ABSAPPL2 PARENTH)
+  (SEQ
+    (IF (IST PARENTH) (HGKM-PRINC "(") (NOP))
+    (printabsexp+parenth (appl2-get-lf ABSAPPL2) TVAL)
+    (HGKM-PRINC " ")
+    (printabslabel (appl-get-functor ABSAPPL2))
+    (HGKM-PRINC " ")
+    (printabsexp+parenth (appl2-get-rt ABSAPPL2) TVAL)
+    (IF (IST PARENTH) (HGKM-PRINC ")") (NOP)) ))
+
+
+(DEFLAM printabsappl (ABSAPPL)
+  (SEQ
+    (printabslabel (appl-get-functor ABSAPPL))
+    (HGKM-PRINC "(")
+    (printabsargs (appl-get-args ABSAPPL))
+    (HGKM-PRINC ")") ))
+
+
+(DEFLAM printabsargs (ARGLIST)
+   (SEQ (printabsexp (CAR ARGLIST))
+        (IFN (MTL? (CDR ARGLIST))
+          (SEQ (HGKM-PRINC ",")
+               (printabsargs (CDR ARGLIST)))
+        (NOP) )))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

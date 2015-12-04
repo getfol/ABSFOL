@@ -1,0 +1,88 @@
+;*****************************************************************************
+;*                                                                           *
+;*                         showabs.rp                                        *
+;*                                                                           *
+;*                                                                           *
+;*  ABSTRACTION SHOW options :                                               *
+;*                                                                           *
+;*    ABSTRACT      -  Shows all the options of the command ABSTRACT         *
+;*    ABSTRACTIONS  -  Shows the names of all the declared abstractions      *
+;*    ABSTRACTION   -  Shows a desired abstraction                           *
+;*    ABSTYPE       -  Shows a desired abstraction type                      *
+;*    ABSTYPES      -  Shows the names of all the abstraction prototypes     *
+;*                     (both library's and user defined ones)                *
+;*                                                                           *
+;*                                                                           *
+;*  SINTAX:                                                                  *
+;*                                                                           *
+;*    SHOW ABSTRACT                                                          *
+;*                                                                           *
+;*    SHOW ABSTRACTION  <abstraction name>                                   *
+;*                                                                           *
+;*    SHOW ABSTRACTIONS                                                      *
+;*                                                                           *
+;*    SHOW ABSTYPE  <abstraction type name>                                  *
+;*                                                                           *
+;*    SHOW ABSTYPES                                                          *
+;*                                                                           *
+;*****************************************************************************
+                                                                         
+
+(DEFLAM SHOWABSOPT# ()
+ (SEQ
+  (ENDL)
+  (HGKM-PRINC "The options of command `ABSTRACT' are the following:")
+  (CRLF)
+  (PRINTLIST (abstract_opts-get))
+  (CRLF)))
+
+
+
+(DEFLAM SHOWABSTRACTIONS# ()
+ (SEQ
+  (ENDL)
+  (IF (MTL? (abslist-get))
+   (PRINTMES "No abstraction has been declared.")
+   (SEQ
+    (PRINTMES "The abstractions declared are the following:")
+    (MAPCAR 'abstraction-print-name (abslist-get))))))
+
+
+
+;(DEFLAM SHOWABSTRACTION# ()
+; (LET ((absname (ABSNAME#)))
+;  (SEQ
+;   (ENDL)
+;   (abstraction-print (abslist-get-abs absname)))))
+
+
+(DEFLAM SHOWABSTRACTION# ()
+ (LET ((absname (ABSNAME#)))
+  (LET ((oldctx (curcname-get)))
+   (LET ((abstraction (abslist-get-abs absname)))
+    (LET ((gndctx (abstraction-get-gndctx  abstraction))) 
+     (SEQ
+      (ENDL)
+      (ctext-switch gndctx)
+      (abstraction-print abstraction)
+      (ctext-switch oldctx)))))))
+
+
+
+(DEFLAM SHOWABSTYPES# ()
+ (SEQ
+  (ENDL)
+  (IF (MTL? (abstypelist-get))
+   (PRINTMES "No abstraction type has been declared.")
+   (SEQ
+    (PRINTMES "You can instantiate the following abstraction prototypes:")
+    (MAPCAR 'abstype-print-name (abstypelist-get))))))
+
+
+(DEFLAM SHOWABSTYPE# ()
+ (LET ((typename (ABSTYPENAME#)))
+   (SEQ 
+    (ENDL)
+    (abstype-print (abstypelist-get-abstype typename)))))
+
+

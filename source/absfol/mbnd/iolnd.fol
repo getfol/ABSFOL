@@ -1,0 +1,96 @@
+;assume command
+
+(mknewcommand (QUOTE TRYASSUME) (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYASSUME#) FALSE)
+
+; inference rules commands
+
+(mknewcommand (QUOTE TRYANDI)  (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYANDI#)   FALSE)
+(mknewcommand (QUOTE TAI)      (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYANDI#)   FALSE)
+
+(mknewcommand (QUOTE TRYANDE)  (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYANDE#)   FALSE)
+(mknewcommand (QUOTE TAE) (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYANDE#)   FALSE)
+
+(mknewcommand (QUOTE TRYORI)   (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYORI#)    FALSE)
+(mknewcommand (QUOTE TOI) (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYORI#)    FALSE)
+
+(mknewcommand (QUOTE TRYORE)   (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYORE#)    FALSE)
+(mknewcommand (QUOTE TOE)      (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYORE#)    FALSE)
+
+(mknewcommand (QUOTE TRYFALSEI)(QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYFALSEI#) FALSE)
+(mknewcommand (QUOTE TFI) (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYFALSEI#) FALSE)
+
+(mknewcommand (QUOTE TRYFALSEE)(QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYFALSEE#) FALSE)
+(mknewcommand (QUOTE TFE) (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYFALSEE#) FALSE)
+
+(mknewcommand (QUOTE TRYNOTE)  (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYNOTE#)   FALSE)
+(mknewcommand (QUOTE TNE) (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYNOTE#)   FALSE)
+
+(mknewcommand (QUOTE TRYNOTI)  (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYNOTI#)   FALSE)
+(mknewcommand (QUOTE TNI) (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYNOTI#)   FALSE)
+
+(mknewcommand (QUOTE TRYIMPE)  (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYIMPE#)   FALSE)
+(mknewcommand (QUOTE TMP)      (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYIMPE#)   FALSE)
+
+(mknewcommand (QUOTE TRYIMPI)  (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYIMPI#)   FALSE)
+(mknewcommand (QUOTE TDED)     (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYIMPI#)   FALSE)
+
+(mknewcommand (QUOTE TRYIFFI)  (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYIFFI#)   FALSE)
+(mknewcommand (QUOTE TII)      (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYIFFI#)   FALSE)
+
+(mknewcommand (QUOTE TRYIFFE)  (QUOTE FOL)(QUOTE MBND)
+              (QUOTE TRYIFFE#)   FALSE)
+(mknewcommand (QUOTE TIE) (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYIFFE#)   FALSE)
+
+(mknewcommand (QUOTE TRYALLI)  (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYALLI#)   FALSE)
+(mknewcommand (QUOTE TUG) (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYALLI#)   FALSE)
+
+(mknewcommand (QUOTE TRYALLE)  (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYALLE#)   FALSE)
+(mknewcommand (QUOTE TUS) (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYALLE#)   FALSE)
+
+(mknewcommand (QUOTE TRYEXISTI)(QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYEXISTI#) FALSE)
+
+(mknewcommand (QUOTE TRYEXISTE)(QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYEXISTE#) FALSE)
+(mknewcommand (QUOTE TES)      (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYEXISTE#) FALSE)
+
+; The substitution command.
+
+(mknewcommand (QUOTE TRYSUBST) (QUOTE FOL) (QUOTE MBND)
+              (QUOTE TRYSUBST#)  FALSE)
+
+; match command
+
+(mknewcommand (QUOTE MATCHTRY) (QUOTE FOL) (QUOTE MBND)
+              (QUOTE MATCHTRY#)  FALSE)
+
+

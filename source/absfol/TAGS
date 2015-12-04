@@ -1,0 +1,1557 @@
+
+abstract/absdflt.fol,266
+(DEFLAM WABS&TABS-create 38,2457
+(DEFLAM sentpars$-create&add 64,3809
+(DEFLAM predpars$-create&add 74,4084
+(DEFLAM funpars$-create&add 89,4521
+(DEFLAM indvars$-create&add 104,4959
+(DEFLAM indpars$-create&add 116,5257
+(DEFLAM absvars&pars$-create&add 128,5555
+
+abstract/absexp.hgk,641
+(DEFLAM ABSAWFF 96,7117
+(DEFLAM ABSPREDAPPL 104,7268
+(DEFSUB ABSQUANTWFF 110,7442
+(DEFSUB ABSTERMIF 114,7532
+(DEFSUB ABSEQU 117,7610
+(DEFSUB ABSWFFIF 121,7726
+(DEFSUB TABS_APPL? 145,9463
+(DEFSUB WABS_APPL? 149,9569
+(DEFSUB TABS_appl-mak 153,9675
+(DEFSUB WABS_appl-mak 154,9735
+(DEFSUB TABS_appl-get-exp 157,9796
+(DEFSUB WABS_appl-get-exp 158,9848
+(DEFLAM mapsym-mak 204,13067
+(DEFSUB mapsym2sym 210,13162
+(DEFLAM mapsym-get-lab 215,13241
+(DEFLAM mapsym-get-type 226,13586
+(DEFSUB IMAP? 237,13846
+(DEFSUB SMAP? 238,13907
+(DEFSUB FUMAP? 239,13968
+(DEFSUB PMAP? 240,14030
+(DEFSUB FIMAP? 242,14092
+(DEFSUB PSMAP? 243,14154
+
+abstract/absexp.rp,1979
+(DEFLAM ABSWFFREP# 151,11197
+(DEFLAM ABSWFFREP@ 153,11275
+(DEFLAM ABSWFF# 155,11331
+(DEFLAM ABSWFF@ 157,11396
+(DEFLAM abswff+pri# 160,11434
+(DEFLAM abswff+pri@ 166,11572
+(DEFLAM abswffcontinue! 182,12125
+(DEFLAM BRACKETED-ABSWFF@ 206,13268
+(DEFLAM WABSSYMAPPL@ 226,14278
+(DEFLAM PREFIX-ABSCONNAPPL@ 245,15221
+(DEFLAM ABSQUANTWFF# 272,16738
+(DEFLAM ABSQUANTWFF@ 274,16818
+(DEFLAM ABSAPPLQUANT 284,17135
+(DEFLAM ABSWFFIF# 300,18026
+(DEFLAM ABSWFFIF@ 302,18098
+(DEFLAM ABSAWFF# 323,19120
+(DEFLAM ABSAWFF@ 325,19189
+(DEFLAM ABSPREDAPPL@ 350,20760
+(DEFLAM PREFIX-ABSPREDAPPL@ 360,21056
+(DEFLAM  EQUABSAPPL@ 370,21281
+(DEFLAM INFIX-ABSPREDAPPL@ 381,21535
+(DEFLAM APPLY-ABSPREDAPPL@ 395,21880
+(DEFLAM ABSTERMREP# 431,24329
+(DEFLAM ABSTERM# 433,24412
+(DEFLAM ABSTERM@ 435,24479
+(DEFLAM absterm+pri# 437,24518
+(DEFLAM absterm+pri@ 443,24659
+(DEFLAM abstermcontinue! 459,25245
+(DEFLAM BRACKETED-ABSTERM@ 483,26400
+(DEFLAM TABSSYMAPPL@ 503,27415
+(DEFLAM PREFIX-ABSFUNAPPL@ 532,28989
+(DEFLAM APPLY-ABSFUNAPPL@ 542,29224
+(DEFLAM ABSARGSOF# 549,29349
+(DEFLAM ABSTERMIF# 566,30293
+(DEFLAM ABSTERMIF@ 568,30368
+(DEFLAM MAPINDSYM# 626,34114
+(DEFLAM MAPINDSYM@ 629,34217
+(DEFLAM MAPINDVARREP# 637,34323
+(DEFLAM MAPINDVAR# 640,34424
+(DEFLAM MAPINDVAR@ 643,34508
+(DEFLAM IND2MAPINDSYM@ 653,34757
+(DEFLAM FUN2MAPINDSYM@ 664,35011
+(DEFLAM MAPSENTSYM# 675,35268
+(DEFLAM MAPSENTSYM@ 679,35376
+(DEFLAM SENT2MAPSENTSYM@ 686,35493
+(DEFLAM PRED2MAPSENTSYM@ 696,35751
+(DEFLAM MAPFUNSYM# 707,36012
+(DEFLAM MAPFUNSYM@ 710,36097
+(DEFLAM MAPPREDSYM# 720,36348
+(DEFLAM MAPPREDSYM@ 723,36435
+(DEFLAM printabsexp 764,38904
+(DEFLAM printabsexp+parenth 766,38969
+(DEFLAM printabslabel 776,39339
+(DEFLAM printabslabels 784,39578
+(DEFLAM printabsquant 819,41507
+(DEFLAM printabsquantcontinue 826,41729
+(DEFLAM printabsif 836,42041
+(DEFLAM printabsprefix 849,42436
+(DEFLAM printabsinfix 858,42707
+(DEFLAM printabsappl 869,43052
+(DEFLAM printabsargs 877,43227
+
+abstract/absrew.fol,900
+(DEFLAM exp-abstract 38,2768
+(DEFLAM exps-abstract 50,3287
+(DEFLAM abs-amf-match 95,6470
+(DEFLAM abs-expmatch 114,7094
+(DEFLAM abs-compexpmatch 119,7221
+(DEFLAM abs-args-compexpmatch 128,7625
+(DEFLAM abs-cl-compexpmatch 138,8085
+(DEFLAM abs-ovl-compexpmatch 145,8384
+(DEFLAM abs-nvl-compexpmatch 163,9234
+(DEFLAM abs-substbindings 188,10363
+(DEFLAM sym-get-maptype 200,10841
+(DEFLAM absterm-translate 232,12556
+(DEFLAM absterms-translate 248,13422
+(DEFLAM abswff-translate 255,13642
+(DEFLAM abswffs-translate 264,14118
+(DEFLAM absawff-translate 271,14336
+(DEFLAM absquantwff-translate 284,15005
+(DEFLAM complexabswff-translate 290,15199
+(DEFSUB smap-apply 308,16316
+(DEFSUB pmap-apply 315,16505
+(DEFSUB fumap-apply 322,16694
+(DEFSUB imap-apply 329,16881
+(DEFLAM label2sym 372,19836
+(DEFLAM label&sym2sym 375,19897
+(DEFLAM labexp2exp 379,20011
+(DEFLAM labexps2exps 386,20193
+
+abstract/absrew.fol.peck,1009
+;* - 2 an INTERFACE with GETFOL's unifier (see file amf.fol)                 *10,711
+;* These routine convert a ground expression in a `labelled expression'.     *13,948
+;* - 5 Convertion of `labelled expressions' into ordinary ones.              *21,1580
+;*  Perform the mapping from ground expressions to `labelled expressions'.   *29,2135
+(DEFLAM exp-38,2768
+;* - 2  The interface with the system's unifier                              *58,3624
+;*                        "substbindings", as it's done in amf-match         *73,4809
+;*                        For instance, if the predicate `P' is mapped into  *89,6073
+;*                        return `PSMAP'.                                    *91,6231
+(DEFLAM abs-95,6470
+   'SMAP 138,8002
+     'PSMAP142,8103
+(DEFLAM absterm-167,9639
+(DEFSUB smap-243,13399
+(DEFLAM label2sym 307,16919
+(DEFLAM labexps2exps (labexplist) (MAPCAR 'labexp2exp labexplist))321,17276
+(DEFLAM labexps2exps (labexplist) (MAPCAR 'labexp2exp labexplist))321,17276
+
+abstract/abstest.fol,428
+(DEFLAM absmaps-test 54,3643
+(DEFLAM NOERR? 59,3796
+(DEFLAM leftsyms-test 91,5897
+(DEFLAM repeated_syms-get 100,6256
+(DEFLAM leftsym_err-print 111,6431
+(DEFLAM rightsyms-test 161,9919
+(DEFLAM rightfuns&inds-test 166,10036
+(DEFLAM rightpreds&sents-test 177,10461
+(DEFLAM attributes-test 188,10850
+(DEFLAM rightsym_err-print 203,11329
+(DEFLAM abssym-sort-test&print 232,13089
+(DEFLAM abssyms-sort-test&print 253,13624
+
+abstract/abstop.hgk,512
+(DEFLAM abstraction_fun-set 45,3091
+(DEFLAM abstraction_fun-get 47,3168
+(DEFLAM abstraction_opts-get 49,3231
+(DEFLAM abstraction_opts-ini 51,3284
+(DEFLAM abstraction_opts-add-key 53,3348
+(DEFLAM mknewabstractiontoken 56,3448
+(DEFLAM GETABSTRACTION 61,3568
+(DEFLAM abstract_fun-set 100,5934
+(DEFLAM abstract_fun-get 102,6005
+(DEFLAM abstract_opts-get 104,6062
+(DEFLAM abstract_opts-ini 106,6109
+(DEFLAM abstract_opts-add-key 108,6167
+(DEFLAM mknewabstracttoken 111,6258
+(DEFLAM GETABSTRACT 116,6369
+
+abstract/abstplib.fol,33
+(DEFLAM abstype_lib-load 10,633
+
+abstract/abstract.cfg,0
+
+abstract/applyabs.fol,365
+(DEFLAM sym-applabs 81,5932
+(DEFLAM abssym-decl 92,6339
+(DEFLAM syms-applabs 134,8510
+(DEFLAM term-applabs 186,12053
+(DEFLAM wff-applabs 206,12720
+(DEFLAM axiom-applabs 265,16304
+(DEFLAM theory-applabs 292,17295
+(DEFLAM default-axiom-rename 331,19011
+(DEFLAM default-axioms-rename 333,19062
+(DEFLAM NOTAXLABEL 340,19257
+(DEFLAM theorem-applabs 366,20820
+
+abstract/cmdabs.fol,1451
+(DEFLAM ABSTRACTION# 26,1665
+(DEFLAM ABSDECLARE# 61,4055
+(DEFLAM ABSTYPE# 96,5936
+(DEFLAM ABSINSTANTIATE# 134,8025
+(DEFLAM ABSTRACT# 174,9768
+(DEFLAM INDCONST-ABSTRACT# 231,13424
+(DEFLAM INDPAR-ABSTRACT# 232,13483
+(DEFLAM INDVAR-ABSTRACT# 233,13540
+(DEFLAM SENTCONST-ABSTRACT# 235,13598
+(DEFLAM SENTPAR-ABSTRACT# 236,13659
+(DEFLAM FUNCONST-ABSTRACT# 238,13719
+(DEFLAM FUNPAR-ABSTRACT# 239,13778
+(DEFLAM PREDCONST-ABSTRACT# 241,13836
+(DEFLAM PREDPAR-ABSTRACT# 242,13897
+(DEFLAM SYM-ABSTRACT# 246,13959
+(DEFLAM ALLSYMS-ABSTRACT# 281,15720
+(DEFLAM INDSYMS-ABSTRACT# 293,16225
+(DEFLAM SENTSYMS-ABSTRACT# 297,16505
+(DEFLAM FUNSYMS-ABSTRACT# 300,16715
+(DEFLAM PREDSYMS-ABSTRACT# 303,16922
+(DEFLAM INDCONSTS-ABSTRACT# 309,17140
+(DEFLAM INDPARS-ABSTRACT# 310,17213
+(DEFLAM INDVARS-ABSTRACT# 311,17284
+(DEFLAM SENTCONSTS-ABSTRACT# 313,17356
+(DEFLAM SENTPARS-ABSTRACT# 314,17431
+(DEFLAM FUNCONSTS-ABSTRACT# 316,17505
+(DEFLAM FUNPARS-ABSTRACT# 317,17578
+(DEFLAM PREDCONSTS-ABSTRACT# 319,17650
+(DEFLAM PREDPARS-ABSTRACT# 321,17754
+(DEFLAM SYMS-ABSTRACT# 324,17828
+(DEFSUB cursyms-get 343,18421
+(DEFLAM TERM-ABSTRACT# 365,19851
+(DEFLAM WFF-ABSTRACT# 380,20260
+(DEFLAM AXIOM-ABSTRACT# 421,22486
+(DEFLAM THEORY-ABSTRACT# 447,23497
+(DEFLAM THEOREM-ABSTRACT# 494,26309
+(DEFLAM DELABSTRACTION# 528,28162
+(DEFLAM DELABSTRACTIONS# 535,28325
+(DEFLAM ABSTERMCMD# 571,30570
+(DEFLAM ABSAWFFCMD# 578,30701
+(DEFLAM ABSWFFCMD# 585,30824
+
+abstract/declabs.fol,505
+(DEFLAM absdeclare 24,1661
+(DEFSUB absmaps-get-rightind 73,4513
+(DEFSUB absmaps-get-rightsent 75,4616
+(DEFSUB absmaps-get-rightfun 77,4722
+(DEFSUB absmaps-get-rightpred 79,4826
+(DEFLAM absmap-get-rightsym 83,4934
+(DEFLAM sym2rightsym 90,5097
+(DEFLAM absmaps-get-rightsym 104,5474
+(DEFLAM absmaps-get-rightsyms 114,5740
+(DEFLAM absrule2amf 142,7192
+(DEFLAM absrules2amf 160,8123
+(DEFLAM abstype-instantiate 184,9636
+(DEFLAM flambda-instantiate 198,9938
+(DEFLAM absrules-instantiate 205,10165
+
+abstract/declabs.fol.peck,115
+;*     absdeclare    If `abs' is a correct abstraction, it is added to       *18,1265
+(DEFLAM absdeclare 24,1661
+
+abstract/declabs.hgk,2258
+(DEFSUB abstraction-mak 89,6565
+(DEFSUB abstraction-get-name 92,6721
+(DEFSUB abstraction-get-body 94,6811
+(DEFSUB abstraction-get-gndctx 97,6902
+(DEFSUB abstraction-get-absctx 99,7006
+(DEFSUB abstraction-get-abskind 101,7110
+(DEFSUB abstraction-get-flambda 103,7245
+(DEFSUB abstraction-get-fomega 105,7380
+(DEFSUB abstraction-get-fdelta 107,7514
+(DEFSUB LAMBDAOMEGA? 111,7650
+(DEFSUB LAMBDADELTA? 114,7765
+(DEFSUB empty_abskind 147,10017
+(DEFSUB PI-ABSKIND? 149,10048
+(DEFSUB TI-ABSKIND? 151,10106
+(DEFSUB PD-ABSKIND? 153,10164
+(DEFSUB TD-ABSKIND? 155,10222
+(DEFSUB PC-ABSKIND? 158,10281
+(DEFSUB TC-ABSKIND? 161,10398
+(DEFSUB PI-abskind-mak 165,10516
+(DEFSUB TI-abskind-mak 166,10558
+(DEFSUB PD-abskind-mak 168,10597
+(DEFSUB TD-abskind-mak 169,10639
+(DEFSUB PC-abskind-mak 171,10678
+(DEFSUB TC-abskind-mak 172,10728
+(DEFSUB PI-add-abskind 176,10774
+(DEFSUB TI-add-abskind 183,10934
+(DEFSUB PD-add-abskind 189,11030
+(DEFSUB TD-add-abskind 196,11190
+(DEFSUB TC-add-abskind 202,11286
+(DEFSUB PC-add-abskind 205,11364
+(DEFSUB flambda-mak 232,13105
+(DEFSUB flambda-get-absmaps 234,13170
+(DEFSUB flambda-get-absrules 235,13226
+(DEFSUB absmaps-mak 273,15973
+(DEFSUB absmaps-get-imap 275,16046
+(DEFSUB absmaps-get-smap 276,16100
+(DEFSUB absmaps-get-fumap 277,16158
+(DEFSUB absmaps-get-pmap 278,16216
+(DEFLAM mappair-mak 281,16276
+(DEFLAM mappair-get-leftsym 282,16328
+(DEFLAM mappair-get-rightsym 283,16373
+(DEFSUB absrules-mak 323,18877
+(DEFSUB absrules-get-rules 325,18942
+(DEFSUB absrules-get-amf 326,18998
+(DEFSUB emptyabsrules 328,19054
+(DEFSUB absrule-mak 330,19100
+(DEFSUB absrule-get-left 332,19171
+(DEFSUB absrule-get-right 333,19224
+(DEFSUB abstype-mak 363,21258
+(DEFSUB abstype-get-name 365,21317
+(DEFSUB abstype-get-body 366,21367
+(DEFSUB abstype-get-absrules 368,21418
+(DEFSUB abslist-get 398,23296
+(DEFSUB abslist-reset 400,23331
+(DEFSUB abslist-del-abs 402,23379
+(DEFSUB abslist-get-abs 405,23492
+(DEFSUB abslist-add-abs 407,23559
+(DEFSUB ABS-NAME? 412,23745
+(DEFSUB abstypelist-get 440,25628
+(DEFSUB abstypelist-reset 442,25671
+(DEFLAM abstypelist-add-abstype 446,25759
+(DEFLAM abstypelist-del-abstype 453,25940
+(DEFLAM abstypelist-get-abstype 456,26049
+(DEFLAM ABSTYPE-NAME? 460,26156
+
+abstract/declabs.rp,1386
+(DEFLAM NEWABSNAME# 68,4827
+(DEFLAM ABSNAME# 75,5003
+(DEFLAM GNDCTX# 82,5173
+(DEFLAM ABSCTX# 93,5452
+(DEFLAM ABSKIND@ 107,5802
+(DEFLAM FLAMBDA# 122,6197
+(DEFLAM PARTIALFLAMBDA# 133,6420
+(DEFLAM FOMEGA@ 144,6687
+(DEFLAM FDELTA@ 153,6844
+(DEFLAM ABSMAPS# 218,10959
+(DEFLAM ABSIMAP# 227,11142
+(DEFLAM ABSSMAP# 233,11357
+(DEFLAM ABSFUMAP# 239,11570
+(DEFLAM ABSPMAP# 245,11786
+(DEFLAM IMAPPAIR@ 254,12005
+(DEFLAM SMAPPAIR@ 263,12194
+(DEFLAM FUMAPPAIR@ 272,12385
+(DEFLAM PMAPPAIR@ 281,12571
+(DEFLAM IMAPPAIR# 291,12764
+(DEFLAM SMAPPAIR# 294,12859
+(DEFLAM FUMAPPAIR# 297,12951
+(DEFLAM PMAPPAIR# 300,13043
+(DEFLAM ARROW@ 306,13139
+(DEFLAM ARROW# 310,13198
+(DEFLAM ABSRULES# 346,15717
+(DEFLAM ABSRULE@ 352,15859
+(DEFLAM TERMABSRULE@ 359,15981
+(DEFLAM WFFABSRULE@ 372,16246
+(DEFLAM ASSIGN@ 385,16504
+(DEFLAM ABSRULE# 398,16740
+(DEFLAM ASSIGN# 402,16817
+(DEFLAM NEWABSTYPENAME# 430,18395
+(DEFLAM ABSTYPENAME# 437,18581
+(DEFLAM abstraction-print 467,20189
+(DEFSUB flambda-print 481,20636
+(DEFLAM abstraction-print-name 489,20838
+(DEFSUB fomega-print 493,20933
+(DEFSUB fdelta-print 499,21013
+(DEFLAM abskind-print 505,21094
+(DEFSUB absmaps-print 529,22291
+(DEFSUB absmap-print 538,22563
+(DEFLAM mappair-print 548,22764
+(DEFLAM absrules-print 568,23711
+(DEFLAM absrule-print 577,23904
+(DEFLAM abstype-print 603,24990
+(DEFLAM abstype-print-name 615,25289
+
+abstract/iabs.fol,0
+
+abstract/rightsym.hgk,2158
+(DEFSUB rightsym-get-label 56,4035
+(DEFSUB rightsyms-get-labels 58,4090
+(DEFSUB SIMPRIGHTSYM? 69,4713
+(DEFSUB simprightsym-mak 71,4782
+(DEFSUB simprightsym-get-label 74,4871
+(DEFSUB simprightsym-get-typ 75,4951
+(DEFSUB simprightsym-get-sort 76,5030
+(DEFSUB simprightsym-get-sact 77,5109
+(DEFLAM simprightsym-mak2 79,5189
+(DEFSUB RIGHTIND? 92,5855
+(DEFSUB rightind-mak 97,6052
+(DEFSUB rightind-get-typ 100,6151
+(DEFLAM rightind-get-label 101,6222
+(DEFSUB rightind-get-sort 102,6295
+(DEFSUB rightind-get-sact 103,6366
+(DEFSUB rightind-mak2 105,6438
+(DEFSUB RIGHTSENT? 118,7077
+(DEFSUB rightsent-mak 122,7223
+(DEFSUB rightsent-get-typ 125,7322
+(DEFLAM rightsent-get-label 127,7411
+(DEFSUB rightsent-get-sort 129,7502
+(DEFSUB rightsent-get-sact 131,7592
+(DEFSUB rightsent-mak2 134,7682
+(DEFSUB applrightsym-mak 146,8324
+(DEFSUB applrightsym-get-label(149,8442
+(DEFSUB applrightsym-get-typ 150,8521
+(DEFSUB applrightsym-get-arity 151,8600
+(DEFSUB applrightsym-get-fmaps 152,8679
+(DEFSUB applrightsym-get-sact 153,8758
+(DEFSUB applrightsym-get-sortinfo(154,8837
+(DEFLAM applrightsym-mak2 156,8917
+(DEFSUB RIGHTFUN? 167,9581
+(DEFSUB rightfun-mak 171,9724
+(DEFSUB rightfun-get-typ 174,9841
+(DEFLAM rightfun-get-label 176,9929
+(DEFSUB rightfun-get-arity 178,10019
+(DEFSUB rightfun-get-fmaps 180,10107
+(DEFSUB rightfun-get-sact 182,10195
+(DEFSUB rightfun-mak2 185,10284
+(DEFSUB RIGHTPRED? 197,10922
+(DEFSUB rightpred-mak 202,11069
+(DEFLAM rightpred-get-typ 205,11187
+(DEFLAM rightpred-get-label 207,11278
+(DEFSUB rightpred-get-arity 209,11371
+(DEFSUB rightpred-get-fmaps 211,11462
+(DEFSUB rightpred-get-sact 213,11553
+(DEFSUB rightpred-mak2 216,11645
+(DEFSUB rightsort-mak 228,12280
+(DEFSUB rightsort-get-typ 231,12412
+(DEFLAM rightsort-get-label 233,12503
+(DEFSUB rightsort-get-arity 235,12596
+(DEFSUB rightsort-get-fmaps 237,12687
+(DEFSUB rightsort-get-sact 239,12778
+(DEFSUB rightsort-get-sortinfo 241,12869
+(DEFSUB RIGHTSORT? 245,12970
+(DEFSUB sortinfo-mak 250,13088
+(DEFSUB emptysortinfo-mak 251,13131
+(DEFSUB sortinfo-get-mg 252,13165
+(DEFSUB sortinfo-get-lg 253,13218
+(DEFSUB rightsort-mak2 255,13273
+
+abstract/rightsym.rp,110
+(DEFLAM RIGHTIND# 30,2058
+(DEFLAM RIGHTSENT# 39,2385
+(DEFLAM RIGHTFUN# 48,2666
+(DEFLAM RIGHTPRED# 96,4786
+
+abstract/showabs.rp,159
+(DEFLAM SHOWABSOPT# 31,2288
+(DEFLAM SHOWABSTRACTIONS# 41,2453
+(DEFLAM SHOWABSTRACTION# 59,2835
+(DEFLAM SHOWABSTYPES# 72,3160
+(DEFLAM SHOWABSTYPE# 82,3426
+
+abstract/vabs.cl,123
+(DEFVAR %ABSLIST%)11,557
+(DEFVAR %ABSTYPELIST%)12,576
+(DEFVAR %ABSTRACTION_OPTS%)13,599
+(DEFVAR %ABSTRACT_OPTS%)14,627
+
+context/ChangeLog,17502
+        DEFSUB a 4,144
+        DEFSUB a DEFLAM, per 4,144
+        a 12,483
+        a DEFLAM, cio'12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+        a DEFLAM, cio' per fare si che la ridefinizione della funzione12,483
+
+context/abcmdcxt.fol,28
+(DEFLAM SWITCHCTX# 24,1317
+
+context/abcontext.cfg,0
+
+context/abcontext.fol,211
+(DEFLAM econtext2context 14,838
+(DEFLAM context2econtext 21,961
+(DEFLAM cur-context-forget 28,1200
+(DEFLAM eoutlines2outlines 48,2247
+(DEFLAM outlines2eoutlines 51,2326
+(DEFLAM cur-outlines-forget 56,2469
+
+context/abcontext.hgk,345
+(DEFLAM context-mak 12,660
+(DEFLAM context-get-lex 15,755
+(DEFLAM context-get-simstruct 16,812
+(DEFLAM context-get-facts 17,870
+(DEFSUB context-get-outlines 18,932
+(DEFSUB outlines-mak 37,2149
+(DEFSUB outlines-get-outline 38,2210
+(DEFSUB outlines-get-ollist 39,2268
+(DEFSUB outlines-mak-empty 44,2367
+(DEFLAM context-mak-empty 50,2502
+
+context/abicontext.fol,0
+
+context/abshowcon.rp,25
+(DEFLAM position# 9,505
+
+context/cmdcxt.fol,165
+(DEFLAM RESET# 81,5025
+(DEFLAM  NAMECTX# 103,5871
+(DEFLAM MAKECTX# 129,6989
+(DEFLAM COPYCTEXT# 153,7993
+(DEFLAM SWITCHCTX# 177,8991
+(DEFLAM COPYLEX# 202,10140
+
+context/context.cfg,0
+
+context/context.fol,1787
+(DEFLAM ectext2ctext 86,5297
+(DEFLAM ctext2ectext 89,5373
+(DEFLAM cur-ctext-forget 94,5507
+(DEFLAM econtext2context 116,6451
+(DEFLAM context2econtext 122,6551
+(DEFLAM cur-context-forget 128,6736
+(DEFLAM elex2lex 151,7678
+(DEFLAM lex2elex 153,7755
+(DEFLAM esimstruct2simstruct 173,8604
+(DEFLAM simstruct2esimstruct 180,8761
+(DEFLAM cur-simstruct-forget 187,9074
+(DEFLAM erepsinfo2repsinfo 210,10153
+(DEFLAM repsinfo2erepsinfo 213,10236
+(DEFLAM cur-repsinfo-forget 218,10409
+(DEFLAM ereps2reps 240,11308
+(DEFLAM reps2ereps 243,11375
+(DEFLAM cur-reps-forget 246,11429
+(DEFLAM erep2rep 266,12318
+(DEFLAM rep2erep 268,12375
+(DEFLAM cur-rep-forget 275,12547
+(DEFLAM eintsinfo2intsinfo 296,13532
+(DEFLAM intsinfo2eintsinfo 299,13607
+(DEFLAM cur-intsinfo-forget 304,13750
+(DEFLAM eints2ints 326,14641
+(DEFLAM ints2eints 329,14699
+(DEFLAM cur-ints-forget 332,14752
+(DEFLAM eint2int 352,15632
+(DEFLAM int2eint 354,15700
+(DEFLAM cur-int-forget 356,15778
+(DEFLAM edesfunsinfo2desfunsinfo 379,16762
+(DEFLAM desfunsinfo2edesfunsinfo 381,16814
+(DEFLAM cur-desfunsinfo-forget 383,16889
+(DEFLAM edefrepsinfo2defrepsinfo 405,17892
+(DEFLAM defrepsinfo2edefrepsinfo 408,17986
+(DEFLAM cur-defrepsinfo-forget 413,18162
+(DEFLAM edefreps2defreps 435,19071
+(DEFLAM defreps2edefreps 438,19146
+(DEFLAM cur-defreps-forget 441,19218
+(DEFLAM edefrep2defrep 461,20112
+(DEFLAM defrep2edefrep 464,20199
+(DEFLAM cur-defrep-forget 467,20305
+(DEFLAM efacts2facts 496,21313
+(DEFLAM facts2efacts 501,21462
+(DEFLAM cur-facts-forget 509,21777
+(DEFLAM eproofs2proofs 534,22827
+(DEFLAM proofs2eproofs 536,22897
+(DEFLAM cur-proofs-forget 541,23036
+(DEFLAM esimpsetsinfo2simpsetsinfo 558,23684
+(DEFLAM simpsetsinfo2esimpsetsinfo 561,23777
+(DEFLAM cur-simpsetsinfo-forget 566,23964
+
+context/context.hgk,2840
+(DEFSUB ctext-mak 96,5894
+(DEFSUB ctext-get-cname 97,5950
+(DEFSUB ctext-get-context 98,5996
+(DEFSUB clist-ini 117,6793
+(DEFSUB clist-get-ctext 139,7970
+(DEFSUB clist-set-ctext 141,8031
+(DEFSUB curcname-set 160,8892
+(DEFSUB curcname-get 161,8946
+(DEFSUB curcname-del 162,8988
+(DEFSUB curcname-ini 163,9048
+(DEFLAM context-mak 183,10077
+(DEFSUB context-get-lex 184,10152
+(DEFSUB context-get-simstruct 185,10213
+(DEFSUB context-get-facts 186,10275
+(DEFSUB lex-mak 214,11629
+(DEFSUB lex-get-symls 215,11689
+(DEFSUB lex-get-symphis 216,11730
+(DEFSUB simstruct-mak 242,13082
+(DEFSUB simstruct-get-repsinfo 245,13201
+(DEFSUB simstruct-get-intsinfo 247,13264
+(DEFSUB simstruct-get-desfunsinfo 249,13328
+(DEFSUB simstruct-get-defrepsinfo 251,13399
+(DEFSUB intsinfo-mak 279,14840
+(DEFSUB intsinfo-get-ints 280,14913
+(DEFSUB intsinfo-get-intsyms 281,14976
+(DEFSUB iint-mak 305,16091
+(DEFSUB int-get-intname 306,16143
+(DEFSUB int-get-symbols 307,16186
+(DEFSUB repsinfo-mak 335,17537
+(DEFSUB repsinfo-get-repdesfuns 336,17604
+(DEFSUB repsinfo-get-representations 337,17673
+(DEFSUB rrep-mak 359,18724
+(DEFSUB rep-get-repname 360,18776
+(DEFSUB rep-get-desfun 361,18819
+(DEFSUB defrepsinfo-mak 387,20248
+(DEFSUB defrepsinfo-get-defreps(388,20317
+(DEFSUB defrepsinfo-get-sorts 389,20386
+(DEFSUB defrep-mak 401,20937
+(DEFSUB defrep-get-sort 402,20985
+(DEFSUB defrep-get-rep 403,21034
+(DEFSUB facts-mak 440,23109
+(DEFSUB facts-get-proofs 443,23248
+(DEFSUB facts-get-axioms 444,23305
+(DEFSUB facts-get-theories 445,23363
+(DEFSUB facts-get-definitions 446,23420
+(DEFSUB facts-get-simpsetsinfo 447,23482
+(DEFSUB proofs-mak 489,25870
+(DEFSUB proofs-get-proof 490,25923
+(DEFSUB proofs-get-plist 491,25973
+(DEFSUB simpsetsinfo-mak 514,27197
+(DEFSUB simpsetsinfo-get-simpsetsinterface 516,27288
+(DEFSUB simpsetsinfo-get-simpsets 517,27366
+(DEFSUB CTEXT-NAME? 531,28090
+(DEFSUB CURCTEXT-UNNAMED? 543,28754
+(DEFSUB lex-mak-empty 590,31087
+(DEFSUB reps-mak-empty 599,31284
+(DEFSUB representations-mak-empty 602,31355
+(DEFSUB repsinfo-mak-empty 604,31412
+(DEFSUB ints-mak-empty 607,31505
+(DEFSUB intsyms-mak-empty 609,31537
+(DEFSUB intsinfo-mak-empty 611,31572
+(DEFSUB desfuns-mak-empty 614,31657
+(DEFSUB desfunsinfo-mak-empty 616,31692
+(DEFSUB defreps-mak-empty 618,31747
+(DEFSUB defrepsorts-mak-empty 620,31782
+(DEFSUB defrepsinfo-mak-empty 622,31821
+(DEFSUB simstruct-mak-empty 625,31919
+(DEFSUB proofs-mak-empty 637,32108
+(DEFSUB axioms-mak-empty 640,32200
+(DEFSUB theories-mak-empty 642,32234
+(DEFSUB simpsinterface-mak-empty 644,32270
+(DEFSUB simps-mak-empty 646,32312
+(DEFSUB defns-mak-empty 649,32392
+(DEFSUB simpsetsinfo-mak-empty 651,32425
+(DEFSUB facts-mak-empty 654,32526
+(DEFLAM context-mak-empty 665,32720
+(DEFSUB ctext-mak-empty 671,32855
+(DEFSUB ctext-emptyname-get 672,32926
+
+context/context.rp,48
+(DEFLAM CNAME# 62,4063
+(DEFLAM CNAME@ 63,4134
+
+context/copylex.fol,523
+(DEFLAM symls-copy 84,5731
+(DEFLAM syms-del-mostgeneral 105,6446
+(DEFLAM predsyms-copy 121,7207
+(DEFLAM predsym-copy 127,7348
+(DEFLAM sentsyms-copy 148,8365
+(DEFLAM sentsym-copy 154,8506
+(DEFLAM indsyms-copy 159,8603
+(DEFLAM indsym-copy 165,8737
+(DEFLAM funsyms-copy 179,9453
+(DEFLAM funsym-copy 185,9587
+(DEFLAM fmaps-copy 192,9838
+(DEFLAM fmap-copy 196,9951
+(DEFLAM sact-copy 201,10120
+(DEFLAM sortsinfo-copy 213,10730
+(DEFLAM sortinfo-copy 219,10862
+(DEFLAM lg-copy 221,10930
+(DEFLAM ext-copy 231,11233
+
+context/icontext.fol,0
+
+context/probcxt.fol,56
+(DEFSUB CS-EPRINC1 48,3303
+(DEFSUB CS-EPRINC2 49,3371
+
+context/showcon.rp,27
+(DEFLAM position# 48,3353
+
+context/systems.fol,349
+(DEFLAM cur-ctext-switchout 78,5127
+(DEFLAM  ctext-switchin 80,5196
+(DEFLAM ctext-switch 82,5270
+(DEFLAM cur-ctext-copy 88,5386
+(DEFLAM ctext-set-label 138,7689
+(DEFLAM clist-get-ctext&applfun 194,11145
+(DEFLAM clist-get-ctext&extend 215,11889
+(DEFLAM ctext-get 237,12699
+(DEFLAM probed-ctext-get 242,12791
+(DEFLAM ctext-applfun 247,12932
+
+context/vcontext.cl,53
+(DEFVAR %CLIST%)50,3464
+(DEFVAR %CURCNAME%)51,3521
+
+mapback/cmdinst.fol,334
+(DEFLAM INSTS# 24,1585
+(DEFLAM INSTW# 37,1967
+(DEFLAM INSTT# 50,2348
+(DEFLAM SYMPAIR# 94,4894
+(DEFLAM IPAIR@ 103,5113
+(DEFLAM FPAIR@ 111,5284
+(DEFLAM SPSYM@ 119,5457
+(DEFLAM SPSYM# 124,5551
+(DEFLAM SPPAIR@ 129,5666
+(DEFLAM WFFPAIR@ 143,6199
+(DEFLAM WFFPAIR# 151,6383
+(DEFLAM TERMPAIR@ 162,6852
+(DEFLAM TERMPAIR# 170,7046
+
+mapback/cmdmback.fol,152
+(DEFLAM MAPBACK# 27,1801
+(DEFLAM MAPBACK-ALPHA# 36,2011
+(DEFLAM MAPBACK-SYMS# 49,2332
+(DEFLAM MAPBACK-PROOF# 63,2776
+(DEFLAM MAPBACK-FACT# 76,3180
+
+mapback/cmdo2pf.fol,24
+(DEFLAM OL2PRF# 15,937
+
+mapback/imapback.fol,0
+
+mapback/instant.fol,977
+(DEFSUB reason-insts 13,722
+(DEFLAM ras-insts 18,865
+(DEFLAM ra-insts 24,1043
+(DEFSUB indconst_ra-insts 45,2083
+(DEFSUB varorparlist_ra-insts 51,2237
+(DEFLAM syms-rewrite 55,2368
+(DEFLAM substlist_ra-insts 62,2574
+(DEFLAM substlist-insts 66,2705
+(DEFSUB exp_ra-insts 79,3116
+(DEFSUB exps_ra-insts 85,3271
+(DEFLAM diffexps-rewrite-sym 89,3402
+(DEFSUB axiomschema_ra-insts 96,3632
+(DEFLAM wtsubstrep_ra-insts 102,3850
+(DEFSUB wtsubst_ra-insts 107,4056
+(DEFSUB reason-instexp 121,4615
+(DEFLAM ras-instexp 126,4762
+(DEFLAM ra-instexp 131,4944
+(DEFSUB exp_ra-instexp 151,5991
+(DEFSUB exps_ra-instexp 157,6148
+(DEFLAM diffexps-rewrite-exp 161,6281
+(DEFSUB axiomschema_ra-instexp 168,6511
+(DEFLAM wtsubstrep_ra-instexp 177,6771
+(DEFSUB wtsubst_ra-instexp 182,6985
+(DEFSUB everyother_ra-insts 189,7179
+(DEFLAM insts-list 207,8301
+(DEFLAM insts 214,8564
+(DEFLAM instw-list 225,8885
+(DEFLAM instw 232,9149
+(DEFLAM instt-list 243,9472
+(DEFLAM instt 250,9739
+
+mapback/instant.hgk,526
+(DEFSUB sympair-mak 10,577
+(DEFSUB sympair-get-lsym 11,629
+(DEFSUB sympair-get-rsym 12,679
+(DEFSUB wffpair-mak 14,730
+(DEFSUB wffpair-get-lwff 15,782
+(DEFSUB wffpair-get-rwff 16,832
+(DEFSUB termpair-mak 18,883
+(DEFSUB termpair-get-lterm 19,936
+(DEFSUB termpair-get-rterm 20,990
+(DEFSUB exp-rewrite-sym 51,2992
+(DEFLAM explist-rewrite-sym 57,3223
+(DEFSUB sym-rewrite 62,3419
+(DEFSUB exp-rewrite-wff 104,5973
+(DEFLAM explist-rewrite-wff 111,6111
+(DEFLAM wff-rewrite-sym 128,7097
+(DEFLAM wff-rewrite-wff 137,7501
+
+mapback/mapback.cfg,0
+
+mapback/mapback.fol,152
+(DEFLAM mapback-sym 18,1082
+(DEFLAM mapback-syms 27,1372
+(DEFLAM mapback-fact 48,2476
+(DEFLAM mapback-proof 57,2776
+(DEFLAM abstry-declare 65,3058
+
+mapback/mapback.hgk,2030
+(DEFSUB abstry-mak 35,2306
+(DEFSUB abstry-get-abslabel 37,2407
+(DEFSUB abstry-get-abswff 38,2458
+(DEFSUB abstry-get-absbelow 39,2514
+(DEFSUB abstry-get-absreason 40,2572
+(DEFSUB fact2abstry 48,2994
+(DEFLAM facts2abstries 55,3194
+(DEFSUB abstry2try 61,3342
+(DEFSUB label2abslabel 76,4068
+(DEFSUB abslabel2label 77,4106
+(DEFLAM exp2labexp 101,5605
+(DEFLAM exps2labexps 108,5909
+(DEFSUB sym2labsym 112,6036
+(DEFLAM syms2labsyms 114,6103
+(DEFSUB labsym2sym 120,6247
+(DEFLAM labsyms2syms 122,6290
+(DEFLAM fact-get-below 132,6766
+(DEFSUB FACT-IN-REASON? 139,6985
+(DEFLAM FACT-IN-RAS? 142,7070
+(DEFSUB absbelow2below 147,7226
+(DEFSUB indconst_ra2abs 175,8908
+(DEFSUB varorparlist_ra2abs 178,8996
+(DEFSUB exp_ra2abs 181,9091
+(DEFSUB exps_ra2abs 184,9175
+(DEFSUB terms_ra2abs 187,9262
+(DEFLAM term_ra2abs 190,9349
+(DEFSUB t_ra2abs 194,9460
+(DEFLAM fact_ra2abs1 218,10921
+(DEFSUB fact_ra2abs 232,11429
+(DEFSUB facts_ra2abs 234,11491
+(DEFLAM list-facts_ra2abs 237,11574
+(DEFLAM wtsubstrep_ra2abs 241,11701
+(DEFSUB wtsubst_ra2abs 246,11860
+(DEFSUB substlist_ra2abs 251,12026
+(DEFLAM substlist2abs 254,12119
+(DEFSUB factand_ra2abs 259,12290
+(DEFSUB everyother_ra2abs 262,12382
+(DEFLAM ra2absra 270,12780
+(DEFSUB abs2indconst_ra 282,13298
+(DEFSUB abs2varorparlist_ra 285,13387
+(DEFSUB abs2exp_ra 288,13482
+(DEFSUB abs2exps_ra 291,13566
+(DEFSUB abs2terms_ra 294,13653
+(DEFLAM abs2term_ra 297,13740
+(DEFSUB abs2t_ra 301,13852
+(DEFSUB abs2fact_ra 306,14001
+(DEFSUB abs2facts_ra 309,14084
+(DEFLAM abs2facts_ra-list 312,14177
+(DEFSUB abs2axiom_ra 317,14317
+(DEFSUB abs2axiomschema_ra 320,14390
+(DEFLAM abs2wtsubstrep_ra 325,14519
+(DEFSUB abs2wtsubst_ra 330,14671
+(DEFSUB abs2substlist_ra 335,14837
+(DEFLAM abs2substlist 338,14930
+(DEFSUB abs2factand_ra 344,15102
+(DEFSUB abs2everyother_ra 349,15257
+(DEFLAM absra2ra 357,15655
+(DEFLAM ras2absras 377,16602
+(DEFLAM absras2ras 381,16722
+(DEFSUB reason2absreason 391,17205
+(DEFSUB absreason2reason 394,17317
+(DEFLAM syms2rightsyms 408,18094
+
+mapback/o2prf.fol,1310
+(DEFLAM ol2prf 56,3889
+(DEFLAM outline2proof 62,4027
+(DEFLAM try2fact 83,5174
+(DEFSUB try-get-ra1 126,7068
+(DEFSUB try-get-ra2 129,7151
+(DEFSUB try-get-ra3 132,7249
+(DEFSUB try-get-ra4 136,7379
+(DEFSUB try-get-ra5 142,7516
+(DEFLAM ra-get-fact 166,8895
+(DEFSUB try-get-fact1 204,10439
+(DEFSUB try-get-fact2 207,10538
+(DEFSUB try-get-fact3 211,10654
+(DEFLAM trylist2factlist 216,10788
+(DEFLAM absfactlist2factlist 235,11395
+(DEFLAM applyassume 272,12950
+(DEFLAM applyandi 278,13050
+(DEFLAM applyande 291,13385
+(DEFLAM applyori 304,13751
+(DEFLAM applyore 320,14221
+(DEFLAM applyfalsei 334,14560
+(DEFLAM applyfalsee 346,14830
+(DEFLAM applynoti 359,15095
+(DEFLAM applynote 371,15367
+(DEFLAM applyimpe 383,15637
+(DEFLAM applyimpi 398,16060
+(DEFLAM applyiffi 411,16389
+(DEFLAM applyiffe 425,16764
+(DEFLAM applyalli 438,17102
+(DEFLAM applyalle 451,17461
+(DEFLAM applyexisti 464,17805
+(DEFLAM applyexiste 477,18157
+(DEFLAM applysubst 490,18519
+(DEFLAM applytermife 513,19457
+(DEFLAM applytermifen 529,19962
+(DEFLAM applytermifi 545,20457
+(DEFLAM applywffife 562,21012
+(DEFLAM applywffifen 574,21318
+(DEFLAM applywffifi 586,21626
+(DEFLAM applytaut 600,22022
+(DEFLAM applytauteq 621,22790
+(DEFLAM applyptaut 642,23583
+(DEFLAM applymonad 663,24345
+(DEFLAM applymonadeq 685,25179
+
+mapback/o2prf.hgk,331
+(DEFSUB olflpair-mak 13,793
+(DEFSUB olflpair-get-ol 14,852
+(DEFSUB olflpair-get-fl 15,901
+(DEFSUB ol2prf-ini 17,951
+(DEFSUB ol2prf-get 18,993
+(DEFSUB ol2prf-add 19,1024
+(DEFSUB ol2prf-get-first 20,1096
+(DEFSUB ol2prf-get-rest 21,1150
+(DEFSUB ol2prf-get-fl 22,1202
+(DEFSUB ol2prf-update 23,1259
+(DEFLAM ol-get-fl 27,1370
+
+mapback/o2prf.rp,27
+(DEFLAM OL2PRF-ERROR1 1,0
+
+mapback/occlist.hgk,201
+(DEFLAM occs-ini 16,1009
+(DEFSUB occs-get-curocc 21,1137
+(DEFSUB occs-get-list 23,1180
+(DEFLAM occs-gotit 25,1226
+(DEFLAM occs-good? 28,1313
+(DEFLAM occs-del 32,1431
+(DEFSUB occs-empty? 36,1546
+
+mapback/occlist.rp,25
+(DEFLAM OCCLIST# 11,649
+
+mapback/showinst.fol,151
+(DEFLAM show-insts# 8,433
+(DEFLAM show-insts 15,571
+(DEFLAM absmaps-get-map 29,1200
+(DEFLAM insts-set-mak 37,1440
+(DEFLAM print-insts-set 46,1734
+
+mapback/vmapback.cl,43
+(DEFVAR %OL2FL%)1,0
+(DEFVAR %OCCS%)4,119
+
+mbdecide/assert.fol,25
+(DEFLAM tdecide 30,2018
+
+mbdecide/cmdecide.fol,376
+(DEFLAM TRYHYPOTS@ 9,505
+(DEFLAM TPTAUT# 11,566
+(DEFLAM TPTAUTMSG 19,762
+(DEFLAM TTAUT# 26,988
+(DEFLAM TTAUTMSG 34,1193
+(DEFLAM TTAUTEQ# 41,1445
+(DEFLAM TTAUTEQMSG 49,1657
+(DEFLAM TMONAD# 56,1883
+(DEFLAM TMONADMSG 65,2156
+(DEFLAM TMONADEQ# 74,2454
+(DEFLAM TMONADEQMSG 83,2735
+(DEFLAM decider-add-try 92,3039
+(DEFLAM TDECIDE# 111,3423
+(DEFLAM TDECIDEMSG 122,3744
+
+mbdecide/idecide.fol,0
+
+mbdecide/mbdecide.cfg,0
+
+mbnd/cmdmbnd.fol,532
+(DEFLAM TRYASSUME# 21,1298
+(DEFLAM TRYANDI# 50,2977
+(DEFLAM TRYANDE# 79,4487
+(DEFLAM TRYORI# 101,5511
+(DEFLAM TRYORE# 134,7186
+(DEFLAM TRYFALSEI# 163,8543
+(DEFLAM TRYFALSEE# 188,9769
+(DEFLAM TRYNOTI# 214,11063
+(DEFLAM TRYNOTE# 243,12577
+(DEFLAM TRYIMPI# 268,13802
+(DEFLAM TRYIMPE# 293,15037
+(DEFLAM TRYIFFI# 318,16259
+(DEFLAM TRYIFFE# 342,17408
+(DEFLAM TRYALLI# 374,19159
+(DEFLAM TRYALLE# 404,20759
+(DEFLAM TRYEXISTI# 439,22713
+(DEFLAM TRYEXISTE# 468,24191
+(DEFLAM TRYSUBST# 505,26304
+(DEFLAM MATCHTRY# 539,28110
+
+mbnd/iolnd.fol,0
+
+mbnd/mbnd.cfg,0
+
+mbnd/olnd.fol,635
+(DEFLAM tryassume 20,1226
+(DEFLAM tryassume-list 29,1414
+(DEFLAM tryandi 46,2211
+(DEFLAM tryande 70,3229
+(DEFLAM tryori 91,4150
+(DEFLAM tryore 114,5125
+(DEFLAM tryfalsei 146,6525
+(DEFLAM outline-falsei 156,6991
+(DEFLAM tryfalsee 177,7921
+(DEFLAM trynoti 200,8879
+(DEFLAM trynote 223,9871
+(DEFLAM tryimpi 250,11144
+(DEFLAM tryimpe 272,12146
+(DEFSUB outline-impe 282,12616
+(DEFLAM tryiffi 303,13561
+(DEFLAM tryiffe 334,15005
+(DEFLAM tryalli 374,17134
+(DEFLAM tryalle 395,18057
+(DEFLAM tryexisti 416,18976
+(DEFLAM tryexiste 437,19891
+(DEFLAM trysubst 492,23041
+(DEFLAM matchtry 527,24788
+(DEFLAM try-bind 538,25290
+
+mbnd/volnd.cl,0
+
+mbrules/cmdif.fol,176
+(DEFLAM TRYTERMIFE# 23,1415
+(DEFLAM TRYTERMIFEN# 55,2780
+(DEFLAM TRYTERMIFI# 86,4188
+(DEFLAM TRYWFFIFE# 118,5424
+(DEFLAM TRYWFFIFEN# 147,6921
+(DEFLAM TRYWFFIFI# 172,8045
+
+mbrules/fapffold.hgk,201
+(DEFLAM occs-ini 16,1013
+(DEFSUB occs-get-curocc 21,1141
+(DEFSUB occs-get-list 23,1184
+(DEFLAM occs-gotit 25,1230
+(DEFLAM occs-good? 28,1318
+(DEFLAM occs-del 32,1436
+(DEFSUB occs-empty? 36,1551
+
+mbrules/iif.fol,0
+
+mbrules/mbrules.cfg,0
+
+mbrules/o2prf.fol,1311
+(DEFLAM ol2prf 56,3889
+(DEFLAM outline2proof 62,4027
+(DEFLAM try2fact 83,5174
+(DEFSUB try-get-ra1 126,7068
+(DEFSUB try-get-ra2 129,7151
+(DEFSUB try-get-ra3 132,7249
+(DEFSUB try-get-ra4 136,7379
+(DEFSUB try-get-ra5 142,7516
+(DEFLAM ra-get-fact 166,8895
+(DEFSUB try-get-fact1 204,10439
+(DEFSUB try-get-fact2 207,10538
+(DEFSUB try-get-fact3 211,10654
+(DEFLAM trylist2factlist 216,10788
+(DEFLAM absfactlist2factlist 235,11395
+(DEFLAM applyassume 272,12950
+(DEFLAM applyandi 278,13050
+(DEFLAM applyande 291,13355
+(DEFLAM applyori 304,13690
+(DEFLAM applyore 320,14121
+(DEFLAM applyfalsei 334,14439
+(DEFLAM applyfalsee 346,14697
+(DEFLAM applynoti 359,14958
+(DEFLAM applynote 371,15218
+(DEFLAM applyimpe 383,15477
+(DEFLAM applyimpi 398,15871
+(DEFLAM applyiffi 411,16168
+(DEFLAM applyiffe 425,16515
+(DEFLAM applyalli 438,16835
+(DEFLAM applyalle 451,17166
+(DEFLAM applyexisti 464,17482
+(DEFLAM applyexiste 478,17807
+(DEFLAM applysubst 491,18140
+(DEFLAM applytermife 512,18927
+(DEFLAM applytermifen 527,19372
+(DEFLAM applytermifi 542,19806
+(DEFLAM applywffife 559,20331
+(DEFLAM applywffifen 571,20607
+(DEFLAM applywffifi 583,20885
+(DEFLAM applytaut 598,21251
+(DEFLAM apllyptaut 619,22015
+(DEFLAM apllyptauteq 640,22773
+(DEFLAM applymonad 661,23540
+(DEFLAM apllymonadeq 683,24370
+
+mbrules/olif.fol,170
+(DEFLAM trytermife 25,1586
+(DEFLAM trytermifen 52,2993
+(DEFLAM trytermifi 85,4787
+(DEFLAM trywffife 118,6591
+(DEFLAM trywffifen 147,8093
+(DEFLAM trywffifi 177,9684
+
+mbrules/vfold.cl,19
+(DEFVAR OCCS)3,36
+
+nd/fapfnd.fol,20
+(DEFLAM existi 1,0
+
+outline/cmdlabel.fol,79
+(DEFLAM LABEL# 22,1370
+(DEFLAM LABELFACT# 29,1593
+(DEFLAM LABELTRY# 36,1795
+
+outline/cmdoutln.fol,158
+(DEFLAM TRYCANCEL# 20,1226
+(DEFLAM NAMEOL# 38,2125
+(DEFLAM MAKEOL# 64,3412
+(DEFLAM COPYOL# 87,4580
+(DEFLAM SWITCHOL# 111,5743
+(DEFLAM RESETOL# 134,6899
+
+outline/ioutline.fol,0
+
+outline/outline.cfg,0
+
+outline/outline.fol,517
+(DEFSUB eoutline2outline 24,1514
+(DEFSUB outline2eoutline 26,1583
+(DEFSUB cur-outline-forget 31,1710
+(DEFSUB eol2ol 36,1785
+(DEFSUB ol2eol 42,1887
+(DEFSUB cur-ol-forget 49,2072
+(DEFSUB cur-outline-switchout 83,4054
+(DEFSUB outline-switchin 86,4130
+(DEFSUB outline-switch 89,4213
+(DEFSUB cur-outline-copy 95,4329
+(DEFSUB outline-get 98,4415
+(DEFSUB probed-cur-outline-switchout 103,4506
+(DEFSUB probed-outline-switch 108,4635
+(DEFSUB probed-outline-switchin 113,4761
+(DEFSUB probed-outline-get 118,4904
+
+outline/outline.hgk,666
+(DEFSUB ol-mak 26,1658
+(DEFSUB ol-get-trylist 28,1760
+(DEFSUB ol-get-telist 29,1805
+(DEFSUB ol-get-texiste 30,1849
+(DEFSUB ol-get-tlabel 31,1894
+(DEFSUB ol-mak-empty 33,1939
+(DEFSUB outline-mak 35,1991
+(DEFSUB outline-get-olname 36,2039
+(DEFSUB outline-get-ol 37,2083
+(DEFSUB outline-mak-empty 38,2124
+(DEFSUB ollist-get 40,2196
+(DEFSUB ollist-set 41,2228
+(DEFSUB ollist-del 42,2284
+(DEFSUB ollist-ini 43,2327
+(DEFSUB ollist-mak-empty 44,2370
+(DEFSUB ollist-get-outline 45,2403
+(DEFSUB ollist-set-outline 47,2472
+(DEFSUB OUTLINE-NAME? 62,3280
+(DEFSUB CUROUTLINE-UNNAMED? 74,3985
+(DEFSUB CUROUTLINE-NAME? 86,4699
+(DEFSUB OUTLINE-UNNAMED? 98,5410
+
+outline/outline.rp,50
+(DEFLAM OLNAME# 19,1155
+(DEFLAM OLNAME@ 20,1229
+
+outline/probol.fol,81
+(DEFSUB OL-EPRINC1 1,0
+(DEFSUB OL-EPRINC2 2,54
+(DEFLAM OL-outline-print 3,119
+
+outline/reason.hgk,107
+(DEFLAM try_ra-mak 15,937
+(DEFSUB tries_ra-mak 24,1273
+(DEFSUB TRY_RA 25,1327
+(DEFSUB TRIES_RA 26,1377
+
+outline/showol.rp,89
+(DEFLAM showoutline# 11,649
+(DEFLAM showtry# 26,1362
+(DEFLAM showtrypremises# 45,2387
+
+outline/trol.fol,1149
+(DEFSUB mbid-mak 30,1947
+(DEFSUB asid-mak 32,1994
+(DEFLAM irid-mak-1 34,2063
+(DEFLAM irid-mak 38,2195
+(DEFLAM pdid-mak 47,2502
+(DEFLAM greatestlabel-get 52,2693
+(DEFSUB pdbel-mak 59,2920
+(DEFLAM list_of_right-mak 61,2962
+(DEFSUB nextnatnum-mak 69,3257
+(DEFSUB MAXIMUM 72,3348
+(DEFLAM outline-add-try 94,4771
+(DEFLAM outline-del-tries 116,5980
+(DEFLAM outline-del-try 123,6175
+(DEFLAM outline-replace-try 126,6272
+(DEFLAM outline-del-try-rec 133,6442
+(DEFLAM try_existe_dep-del 174,9107
+(DEFLAM TRY_EELIM 177,9212
+(DEFLAM TRY_EXISTE 181,9380
+(DEFSUB oltry-get-deplist 195,9895
+(DEFLAM try-get-premises 214,11025
+(DEFLAM ras-get-tries 219,11181
+(DEFLAM ra-get-tries 225,11324
+(DEFLAM tries-get-id 243,12267
+(DEFLAM tries-get-freevars 261,13252
+(DEFSUB try-get-freevars 267,13439
+(DEFLAM tries-get-parameters 270,13519
+(DEFSUB try-get-parameters 275,13672
+(DEFLAM deplist_of_tries-del-wff 286,14265
+(DEFLAM deplist_of_tries-del-wffs 296,14627
+(DEFLAM tries2wffs_conj-mak 310,15352
+(DEFLAM tries_imp_wff-mak 315,15519
+(DEFLAM try-union-dep 327,16130
+(DEFLAM tries-union-dep 330,16231
+(DEFLAM tries-union-dep1 333,16305
+
+outline/trol.hgk,1570
+(DEFSUB curolname-set 29,1803
+(DEFSUB curolname-get 30,1859
+(DEFSUB curolname-del 31,1897
+(DEFSUB curolname-ini 32,1953
+(DEFSUB curtelist-set 53,3308
+(DEFSUB curtelist-get 54,3364
+(DEFSUB curtelist-del 55,3402
+(DEFSUB curtelist-ini 56,3451
+(DEFSUB curtelist-get-depair 57,3500
+(DEFSUB curtelist-add-depair 58,3569
+(DEFSUB curtelist-del-linenum 60,3651
+(DEFLAM curtelist-mod 63,3750
+(DEFLAM curtelist-del-dep 69,3956
+(DEFLAM curtelist-update 77,4288
+(DEFSUB curtelist-update1 83,4437
+(DEFSUB curtrylist-set 101,5424
+(DEFSUB curtrylist-get 102,5482
+(DEFSUB curtrylist-del 103,5523
+(DEFSUB curtrylist-ini 104,5574
+(DEFSUB curtrylist-add-try 105,5625
+(DEFSUB curtrylist-get-try 107,5706
+(DEFSUB curtexiste_substs-mak 124,6789
+(DEFSUB existelem-get-name 126,6881
+(DEFSUB existelem-get-orglabel 127,6938
+(DEFSUB existelem-get-substvars 128,7004
+(DEFSUB curtexiste-set 130,7072
+(DEFSUB curtexiste-get 131,7132
+(DEFSUB curtexiste-del 132,7172
+(DEFSUB curtexiste-ini 133,7223
+(DEFSUB curtexiste-add-substs 134,7274
+(DEFSUB curtexiste-get-elem 136,7387
+(DEFSUB labtry-mak 149,8177
+(DEFSUB labtry-get-ollabel 150,8234
+(DEFSUB labtry-get-tryname 151,8284
+(DEFSUB curtlabel-set 153,8335
+(DEFSUB curtlabel-get 154,8394
+(DEFSUB curtlabel-del 155,8432
+(DEFSUB curtlabel-ini 156,8481
+(DEFSUB curtlabel-add 157,8530
+(DEFSUB curtlabel-get-labtry 159,8610
+(DEFSUB IS-MATCHED? 171,9334
+(DEFSUB GT-PAIR-TRY 189,10461
+(DEFSUB EQUAL-PAIR-TRY 192,10546
+(DEFLAM UNIONLE-PAIR-TRY 195,10637
+(DEFLAM ORDER-PAIR-TRY 204,11034
+(DEFLAM curol-ini 214,11521
+
+outline/trol.rp,659
+(DEFLAM TRYREP# 22,1371
+(DEFLAM TRYREP@ 27,1497
+(DEFLAM TRIES@ 34,1613
+(DEFLAM TRY# 51,2554
+(DEFLAM TRY@ 56,2652
+(DEFLAM TRYAXREF@ 62,2788
+(DEFLAM TRYREF@ 87,3491
+(DEFLAM WFF_OR_TRY# 108,4632
+(DEFLAM OLLINEREF# 131,5889
+(DEFLAM OLLINEREF@ 134,5982
+(DEFLAM OLLINELABELREF# 138,6071
+(DEFLAM OLLINELABELREF@ 141,6175
+(DEFLAM outline-try-print 163,7193
+(DEFLAM reason-print 172,7450
+(DEFSUB rule-print 178,7588
+(DEFLAM ras-print 180,7634
+(DEFLAM ra-print 187,7818
+(DEFLAM trylabel-print 213,8959
+(DEFLAM tries-print-premises 236,10139
+(DEFLAM try-premise-print 244,10440
+(DEFLAM try-axiom-print 253,10714
+(DEFSUB cur-outline-print 270,11507
+
+outline/try.fol,148
+(DEFSUB DIFBELOW? 21,1299
+(DEFLAM DIFBELOW?-3 28,1495
+(DEFSUB BEL-REL? 50,2689
+(DEFSUB get-good-below 64,3487
+(DEFSUB get-good-below-3 69,3623
+
+outline/try.hgk,611
+(DEFSUB try-mak 31,2018
+(DEFSUB try-get-label 33,2130
+(DEFSUB try-get-wff 34,2171
+(DEFSUB try-get-deplist 35,2216
+(DEFSUB try-get-below 36,2271
+(DEFSUB try-get-reason 37,2330
+(DEFSUB deplist-union4id 39,2391
+(DEFSUB deplist-del-try-label 40,2452
+(DEFSUB try-replace-reason 42,2525
+(DEFSUB id-mak 57,3400
+(DEFSUB id-get-left 58,3447
+(DEFSUB id-get-right 59,3482
+(DEFSUB starbel-mak 60,3518
+(DEFSUB nobel-mak 61,3553
+(DEFSUB ID-EQUAL 63,3585
+(DEFSUB ID-GT 64,3629
+(DEFSUB ID-LT 68,3796
+(DEFSUB STAR-BELOW? 72,3963
+(DEFSUB NO-BELOW? 73,4011
+(DEFLAM ID-UNIONLE 75,4056
+(DEFLAM ID-OUTOF 84,4418
+
+outline/try.rp,245
+(DEFLAM ID# 22,1370
+(DEFLAM ID@ 27,1475
+(DEFSUB NATNUM-XTD@ 35,1673
+(DEFLAM IDREP# 40,1781
+(DEFLAM IDREP@ 45,1899
+(DEFLAM id-print 64,2802
+(DEFSUB id-deplist-print 74,3032
+(DEFLAM id-deplist-print-rec 80,3147
+(DEFLAM try-print 100,4120
+
+outline/voutline.cl,160
+(DEFVAR %CURTRYLIST%)3,32
+(DEFVAR %CURTLABEL%)4,103
+(DEFVAR %CURTELIST%)5,173
+(DEFVAR %CURTEXISTE%)6,249
+(DEFVAR %CUROLNAME%)7,312
+(DEFVAR %OLLIST%)8,378
+
+proof/reason.hgk,108
+(DEFLAM try_ra-mak 23,1495
+(DEFSUB tries_ra-mak 33,1904
+(DEFSUB TRY_RA 34,1958
+(DEFSUB TRIES_RA 35,2008
+
+mapback/context/cmdcxt.fol,28
+(DEFLAM SWITCHCTX# 24,1317
+
+mapback/context/context.fol,211
+(DEFLAM econtext2context 14,838
+(DEFLAM context2econtext 21,961
+(DEFLAM cur-context-forget 28,1200
+(DEFLAM eoutlines2outlines 48,2247
+(DEFLAM outlines2eoutlines 51,2326
+(DEFLAM cur-outlines-forget 56,2469
+
+mapback/context/context.hgk,345
+(DEFLAM context-mak 12,660
+(DEFLAM context-get-lex 15,755
+(DEFLAM context-get-simstruct 16,812
+(DEFLAM context-get-facts 17,870
+(DEFSUB context-get-outlines 18,932
+(DEFSUB outlines-mak 37,2149
+(DEFSUB outlines-get-outline 38,2210
+(DEFSUB outlines-get-ollist 39,2268
+(DEFSUB outlines-mak-empty 44,2367
+(DEFLAM context-mak-empty 50,2502
+
+mapback/context/icontext.fol,0
+
+mapback/context/showcon.rp,25
+(DEFLAM position# 9,505

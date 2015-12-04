@@ -1,0 +1,34 @@
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   %OL2FL%        ::= < REP{ <ol_fl-pair> } >                       *
+;*   <ol_fl-pair> ::= < <outline_label> . <fact_label> >              *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   %OL2FL% is a variable containing a list of                       *
+;*   (outline label . fact label)                                     *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB olflpair-mak (olabel flabel) (CONS olabel flabel))
+(DEFSUB olflpair-get-ol (olfpair) (CAR olfpair))
+(DEFSUB olflpair-get-fl (olfpair) (CDR olfpair))
+
+(DEFSUB ol2prf-ini () (SETQ %OL2FL% MTL))
+(DEFSUB ol2prf-get () %OL2FL%)
+(DEFSUB ol2prf-add (ofpair) (SETQ %OL2FL% (LCONS ofpair (ol2prf-get))))
+(DEFSUB ol2prf-get-first (olfllist) (FIRST olfllist))
+(DEFSUB ol2prf-get-rest (olfllist) (REST olfllist))
+(DEFSUB ol2prf-get-fl (ol) (HGKM-ASSOC ol (ol2prf-get)))
+(DEFSUB ol2prf-update (try)
+ (ol2prf-add
+  (olflpair-mak (try-get-label try) (DIFFERENCE (curnline-get) 1))))
+
+(DEFLAM ol-get-fl (ol)
+ (LET ((try (curtrylist-get-try ol)))
+  (IF (IS-MATCHED? try)
+   (olflpair-get-fl 
+    (ol2prf-get-fl
+     (ra-get-value (ras-get-first
+                    (reason-get-ras (try-get-reason try))))))
+   (olflpair-get-fl (ol2prf-get-fl ol)))))

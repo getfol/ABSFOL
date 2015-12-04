@@ -1,0 +1,58 @@
+;**********************************************************************
+;*                                                                    *
+;*  This file contains the code for handling the user to show         *
+;*  the possible elements of the instantiation set specified.         *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM show-insts# ()
+ (LET ((SYM (DECSYM#)))
+  (SEQ
+   (TKC# 'BY "BY")
+   (LET ((absname (ABSNAME#)))
+    (show-insts SYM absname)))))
+
+(DEFLAM show-insts (sym absname)
+ (LET ((abstraction (abslist-get-abs absname)))
+  (IF (ISF abstraction) (PRINTMES "Not existing abstraction")
+   (LET ((flambda (abstraction-get-flambda abstraction)))
+    (LET ((absmap (flambda-get-absmaps flambda)))
+     (LET ((cursymmap (absmaps-get-map sym absmap)))
+      (IFN (MTL? cursymmap)
+       (LET ((insts-set (insts-set-mak (outnam sym) cursymmap)))
+	(IFN (MTL? insts-set) (print-insts-set sym insts-set)
+         (PRINTMES3 (outnam sym)
+		    " can be instantiated only by " (outnam sym))))
+       (PRINTMES3 (outnam sym)
+		   " can be instantiated only by " (outnam sym)))))))))
+
+(DEFLAM absmaps-get-map (sym absmap)
+ (IF (INDSYM sym) (absmaps-get-imap absmap)
+  (IF (FUNSYM sym) (absmaps-get-fumap absmap)
+   (IF (SENTSYM sym) (absmaps-get-smap absmap)
+    (IF (PREDSYM sym) (absmaps-get-pmap absmap)
+     FALSE)))))
+
+
+(DEFLAM insts-set-mak (sym maplist)
+ (IF (MTL? maplist) MTL
+  (LET ((rsym (rightsym-get-label (mappair-get-rightsym (FIRST maplist)))))
+   (IF (EQUAL rsym sym)
+    (LCONS (mappair-get-leftsym (FIRST maplist))
+	   (insts-set-mak sym (REST maplist)))
+    (insts-set-mak sym (REST maplist))))))
+
+
+(DEFLAM print-insts-set (sym insts-set)
+ (LET ((length (LENGTH insts-set)))
+  (SEQ
+   (CRLF)
+   (IF (INTEQ length 1)
+    (HGKM-PRINC "The only possible instantiation of ")
+    (HGKM-PRINC "Possible instantiation of "))
+   (HGKM-PRINC (outnam sym))
+   (IF (INTEQ length 1)
+    (HGKM-PRINC " is : ")
+    (HGKM-PRINC " are : "))
+  (PRINTLIST insts-set)
+  (CRLF))))

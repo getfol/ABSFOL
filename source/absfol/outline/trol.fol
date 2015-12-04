@@ -1,0 +1,336 @@
+;**********************************************************************
+;*                                                                    *
+;*  This file contains the  code which is needed in order to build    *
+;*  outlines-steps.                                                   *
+;*  For the way the exist elimination is being done it contains also  *
+;*  the code for the automatic elimination of dependencies due to     *
+;*  exist elimination steps                                           *
+;*                                                                    *
+;**********************************************************************
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   <label> ::= ALT [ <mbid> | <asid> | <irid> | NOBELOW ]           *
+;*   <mbid>  ::= < <line> . 0 >                                       *
+;*   <asid>  ::= < 0 . <line> >                                       *
+;*   <irid>  ::= < <line> . <line> >                                  *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   There are 4 kind of label:                                       *
+;*   <mbid> used to label mapped back wff;                            *
+;*   <irid> used to label wff obtained by rule application;           *
+;*   <asid> used to label assumptions.                                *
+;*                                                                    *
+;*   They all have the same structure, that is, <id>. A zero in the   *
+;*   left or right part of the <label> allows the identification.     *
+;*                                                                    *
+;**********************************************************************
+ 
+(DEFSUB mbid-mak (factno)  (id-mak factno 0))
+
+(DEFSUB asid-mak () (id-mak 0 (nextnatnum-mak 0 (curtrylist-get))))
+
+(DEFLAM irid-mak-1 (try)
+ (LET ((left (id-get-left (try-get-label try))))
+  (id-mak left (nextnatnum-mak left (curtrylist-get)))))
+
+(DEFLAM irid-mak (try1 try2)
+ (LET ((id1 (try-get-label try1))
+       (id2 (try-get-label try2)))
+  (LET ((left1 (id-get-left id1))
+	(left2 (id-get-left id2)))
+   (IF (GT left1 left2)
+    (id-mak left1 (nextnatnum-mak left1 (curtrylist-get)))
+    (id-mak left2 (nextnatnum-mak left2 (curtrylist-get)))))))
+
+(DEFLAM pdid-mak (tries)
+ (LET ((glab (greatestlabel-get (try-get-label (FIRST tries))(REST tries))))
+  (id-mak (id-get-left glab)
+	  (nextnatnum-mak (id-get-left glab) (curtrylist-get)))))
+
+(DEFLAM greatestlabel-get (label tries)
+ (IF (MTL? tries) label
+  (LET ((first (try-get-label (CAR tries))))
+   (IF (ID-GT label first)
+    (greatestlabel-get label (REST tries))
+    (greatestlabel-get first (REST tries))))))
+
+(DEFSUB pdbel-mak (tries) (starbel-mak))
+
+(DEFLAM list_of_right-mak (left trylist)
+ (IF (MTL? trylist) (LIST 0)
+  (LET ((try (FIRST trylist)))
+   (IF (INTEQ left (id-get-left (try-get-label try)))
+    (LCONS (id-get-right (try-get-label try))
+	   (list_of_right-mak left (REST trylist)))
+    (list_of_right-mak left (REST trylist))))))
+
+(DEFSUB nextnatnum-mak (left trylist)
+ (ADD1 (MAXIMUM (list_of_right-mak left trylist))))
+
+(DEFSUB MAXIMUM (list) (FIRST (LAST (ORDER list))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX                                                            *
+;*   (outline-add-try label wff deplist below rule)                   *
+;*                                                                    *
+;*  DESCRIPTION                                                       *
+;*   outline-add-try does the following things (in order)             *
+;*        1) automatic elimination of the dependencies if necessary   *
+;*        2) builds the line of outline;                              *
+;*        3) Adjust %CURTELIST%, if any dependency arose.             *
+;*        4) Add new try of the outline to %CURTRYLIST%.              *
+;*        5) Print the try on SELECTED-OUTPUT.                        *
+;*                                                                    *
+;*   NOTE                                                             *
+;*     label is passed as an argument, because the labeling mechanism *
+;*     is sligthly different when dealing with map back command,      *
+;*     assumptions or inference rules                                 *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM outline-add-try (label wff deplist below rule)
+ (LET ((deplist (try_existe_dep-del wff deplist)))
+  (LET ((curtry  (try-mak label wff deplist below rule)))
+   (SEQ
+    (curtelist-update deplist)
+    (curtrylist-add-try curtry)
+    (outline-try-print curtry)))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (outline-del-tries labellist)                                    *
+;*   (outline-replace-try try)                                        *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   The first cancels steps of the current outline, that's deletes   *
+;*   outline line.                                                    *
+;*   The second replace the try in the current outline and            *
+;*   then print it.                                                   *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM outline-del-tries (labellist)
+ (IF (MTL? (REST labellist))
+  (outline-del-try (FIRST labellist))
+  (SEQ
+   (outline-del-try (FIRST labellist))
+   (outline-del-tries (REST labellist)))))
+
+(DEFLAM outline-del-try (label)
+ (curtrylist-set (outline-del-try-rec label (curtrylist-get))))
+
+(DEFLAM outline-replace-try (try)
+ (IF (IST (try-get-wff try))
+  (SEQ
+   (outline-del-try (try-get-label try))
+   (curtrylist-add-try try)
+   (outline-try-print try))))
+
+(DEFLAM outline-del-try-rec (label outline)
+ (IF (MTL? outline) MTL
+  (IF (ID-EQUAL (try-get-label (FIRST outline)) label)
+   (REST outline)
+   (LCONS (FIRST outline) (outline-del-try-rec label (REST outline))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX                                                            *
+;*   (try_existe_dep-delwff deplist)                                  *
+;*   (TRY_EELIM wff deplist)                                          *
+;*   (TRY_EXISTE wff facts deplist)                                   *
+;*                                                                    *
+;*  DESCRIPTION                                                       *
+;*   existe_dep-del tries to discharge the assumption which is        *
+;*   introduced by the EXISTE rule. A global variable %CURTEXISTE%    *
+;*   is used for UN-discharged assumptions. %CURTEXISTE% is feeded    *
+;*   only when there is a new EXISTS ELIMINATION.                     *
+;*   The EELIM recursion must be made because there can be more       *
+;*   dependencies due to existe, and eliminating one of them,         *
+;*   could help in eliminating the others. (REVERSE deplist) is       *
+;*   made in order to minimize the number of recursions.              *
+;*   In EXISTE, if we want to discharge the assumption DEP1 we        *
+;*   must delete it from the list of dependencies because DEP1        *
+;*   has as free vars those on which the "existe" has worked.         *
+;*   And these are just those which must not be considered.           *
+;*   Infact "existe" works in this way:                               *
+;*                                                                    *
+;*                               [ p(x) ]                             *
+;*         exists z . p(z)  C(...no x as freevar...)                  *
+;*         -----------------------------------------                  *
+;*                          C (...)                                   *
+;*                                                                    *
+;*   Moreover, for how dependencies have been built once we           *
+;*   delete the dep from the existe we must add the dependencies      *
+;*   of the formula on which the existe has been applied.             *
+;*   I cannot delete the line from %CURTEXISTE% since the line        *
+;*   created by existe can be used several times.                     *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM try_existe_dep-del (wff deplist)
+ (IF (IST (curtexiste-get)) (TRY_EELIM wff deplist) deplist)) 
+
+(DEFLAM TRY_EELIM (wff deplist)
+ (LET ((newdeplist (TRY_EXISTE wff (REVERSE deplist) deplist)))
+  (IF (EQUAL newdeplist deplist) deplist (TRY_EELIM wff newdeplist))))
+
+(DEFLAM TRY_EXISTE (wff tries deplist)
+ (IF (MTL? tries) Emptydeplist	
+  (LET ((DEP1 (FIRST tries)))
+   (LET ((existelem (curtexiste-get-elem DEP1)))
+    (IF (AND (IST existelem)  
+	     (NOFREEVARS-IN-ASS? wff (deplist-del-try-label DEP1 deplist) 
+				 (existelem-get-substvars existelem)))
+     (deplist-union4id 
+      (oltry-get-deplist (existelem-get-orglabel existelem))
+      (EXISTE wff (REST tries) deplist))
+     (deplist-union4id 
+      (deplist-mak DEP1) 
+      (EXISTE wff (REST tries) deplist)))))))
+
+(DEFSUB oltry-get-deplist (LABEL)
+ (IFN (INTEGER? LABEL) Emptydeplist
+  (try-get-deplist (curtrylist-get-try LABEL))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (try-get-premises TRYID)                                         *
+;*   (ras-get-tries RAS)                                              *
+;*   (ra-get-tries RA)                                                *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   The first return the list of all the facts that constitute       *
+;*   the premises of TRYID.                                           *
+;*   The two last one selects all the tries respectively from RAS     *
+;*   and RA.                                                          *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM try-get-premises (TRYID)
+ (LET ((try (curtrylist-get-try TRYID)))
+  (IF (MTL? try) MTL
+   (ras-get-tries (reason-get-ras (try-get-reason try))))))
+
+(DEFLAM ras-get-tries (RAS)
+ (IF (RAS-EMPTY RAS) MTL
+  (APPEND
+   (ra-get-tries (ras-get-first RAS))
+   (ras-get-tries (ras-get-rest RAS)))))
+
+(DEFLAM ra-get-tries (RA)
+ (IF (FACT_RA RA) (LIST (ra-get-value RA))
+  (IF (FACTS_RA RA) (ra-get-value RA)
+   (IF (TRY_RA RA) (LIST (ra-get-value RA))
+    (IF (TRIES_RA RA) (tries-get-id (ra-get-value RA))
+     (IF (FACTAND_RA RA) (LIST (factand-get-facts (ra-get-value RA)))
+      MTL))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (tries-get-id list)                                              *
+;*  DESCRIPTION:                                                      *
+;*   Given a list of tries returns a list of only the label of the    *
+;*   elements of the list.                                            *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM tries-get-id (list)
+ (IF (MTL? list) list
+  (LCONS (try-get-label (FIRST list))(tries-get-id (REST list)))))
+
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (tries-get-freevars   id-list)                                   *
+;*   (try-get-freevars     id)                                        *
+;*   (tries-get-parameters id-list)                                   *
+;*   (try-get-parameters   id)                                        *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Get free vars and parameters of a try.                           *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM tries-get-freevars (id-list)
+ (IF (MTL? (REST id-list))
+  (try-get-freevars (FIRST id-list))
+  (UNION (try-get-freevars (FIRST id-list))
+	 (tries-get-freevars (REST id-list)))))
+
+(DEFSUB try-get-freevars (id) 
+ (frees (try-get-wff (curtrylist-get-try id))))
+
+(DEFLAM tries-get-parameters (id-list)
+ (IF (MTL? id-list) MTL
+  (UNION (try-get-parameters (FIRST id-list))
+	 (tries-get-parameters (REST id-list)))))
+
+(DEFSUB try-get-parameters (id) 
+ (parameters (try-get-wff (curtrylist-get-try id))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (deplist_of_tries-del-wff wff deplist)                           *
+;*   (deplist_of_tries-del-wffs wfflist deplist)                      *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM deplist_of_tries-del-wff (wff deplist)
+ (IF (EMPTY-DEPLIST? deplist) Emptydeplist
+  (IF (EQUALEXP
+       wff 
+       (try-get-wff (curtrylist-get-try (deplist-get-1st deplist))))
+   (deplist_of_tries-del-wff wff (deplist-get-2nd deplist))
+   (deplist-mak2 
+    (deplist-get-1st deplist) 
+    (deplist_of_tries-del-wff wff (deplist-get-2nd deplist))))))
+
+(DEFLAM deplist_of_tries-del-wffs (wfflist deplist)
+ (IF (OR (MTL? wfflist) (MTL? deplist)) deplist
+  (deplist_of_tries-del-wff (FIRST wfflist)
+			    (deplist_of_tries-del-wffs (REST wfflist)
+						       deplist))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (tries2wff_conj-mak tries)                                       *
+;*   (tries_imp_wff-mak tries)                                        *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM tries2wffs_conj-mak (tries)
+ (IF (MTL? (REST tries)) (try-get-wff (FIRST tries))
+  (mkand (try-get-wff (FIRST tries))
+	 (tries2wffs_conj-mak (REST tries)))))
+
+(DEFLAM tries_imp_wff-mak (wff tries)
+ (IF (MTL? tries) wff
+  (mkimp (tries2wffs_conj-mak tries) wff)))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (try-union-dep try1 try2)                                        *
+;*   (tries-union-dep tries)                                          *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM try-union-dep (try1 try2)
+ (deplist-union4id (try-get-deplist try1)(try-get-deplist try2)))
+
+(DEFLAM tries-union-dep (tries) 
+ (tries-union-dep1 Emptydeplist tries))
+
+(DEFLAM tries-union-dep1 (DEPLIST tries)
+ (IF (MTL? tries) DEPLIST 
+  (tries-union-dep1 (deplist-union4id DEPLIST (try-get-deplist (CAR tries)))
+		    (CDR tries))))

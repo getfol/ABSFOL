@@ -1,0 +1,182 @@
+;
+; TRYTERMIFE: Term if elimination command
+; ***********************************************************************
+; *                                                                     *
+; * SYNTAX                                                              *
+; *   trytermife <try1> <try2> <termif> OPT[occ <seq_of_natnum>]        *
+; *                                                                     *
+; * DESCRIPTION                                                         *
+; *   termife preconditions: <try2>'s wff must be <termif>'s condition  *
+; *   termife rule function: substitutes <termif> with <termif>'s       * 
+; *     "then part" (thenof(<termif>)) in <try1>'s wff.                 *
+; *     In the case <termif> is not a subexpression of                  *
+; *     <try1>'s wff, no substitution takes place and a new try is      *
+; *     asserted whose wff is equal to <try1>'s wff.			*
+; *   If the optional part "occ <seq_of_natnum>" is not specified,      *
+; *   the substitution is performed in all occurences of <termif> in    *
+; *   <try1>'s wff. If "occ <seq_of_natnum>" is specified, then         *
+; *   the substitution is performed in each occurrence in               *
+; *   <seq_of_natnum> appearing in <try1>'s wff.			*
+; *                                                                     *
+; ***********************************************************************
+;
+(DEFLAM TRYTERMIFE# ()
+ (LET ((try1 (TRY#)))
+  (SEQ
+   (TK@ COMMA)
+   (LET ((try2 (TRY#)))
+    (SEQ
+     (TK@ COMMA)
+       (LET ((termif (TERMIF#)))
+        (SEQ
+         (LET ((occurrences (IF (TK2@ 'OCC 'occ) (NATNUMREP#))))
+          (SEQ
+           (ENDL)
+           (trytermife try1 try2 termif occurrences))))))))))
+
+; TRYTERMIFEN: Term if elimination command (with a negation of the condition)
+; ***********************************************************************
+; *                                                                     *
+; * SYNTAX                                                              *
+; *   trytermifen <try1> <try2> <termif> OPT[occ <seq_of_natnum>]       *
+; *                                                                     *
+; * DESCRIPTION                                                         *
+; *   termifen preconditions: <try2>'s wff must be the negation of      *
+; *     <termif>'s condition 						*
+; *   termifen rule function: like termife.				*
+; * NOTE:								*
+; *   <try2>'s wff must be the negation of <termif>'s condition and no  *
+; *   viceversa. If <termif> = trmif not A then t1 else t2,		*
+; *                 <try2>'s wff = A, the rule preconditions are not    *
+; *                   satisfied						*
+; *									*
+; ***********************************************************************
+;
+(DEFLAM TRYTERMIFEN# ()
+ (LET ((try1 (TRY#)))
+  (SEQ
+   (TK@ COMMA)
+   (LET ((try2 (TRY#)))
+    (SEQ
+     (TK@ COMMA)
+     (LET ((termif (TERMIF#)))
+      (SEQ
+       (LET ((occurrences (IF (TK2@ 'OCC 'occ) (NATNUMREP#))))
+        (SEQ
+         (ENDL)
+         (trytermifen try1 try2 termif occurrences))))))))))
+
+; TRYTERMIFI: Term if introduction command 
+; ***********************************************************************
+; *                                                                     *
+; * SYNTAX                                                              *
+; *   trytermifi <try1> <try2> <wff> <term1> <term2>			*
+; *                                                                     *
+; * DESCRIPTION                                                         *
+; *   termifi preconditions: <try1>'s and <try2>'s wffs must only       *
+; *     differ because of <term1> in <try1>'s wff in place of <term2>   *
+; *   termifi rule function: it replaces in <try1>' wff <term1>         *
+; *     with "iftrm <wff> then <term1> else <term2>", dischaarging any  *
+; *     assumption in <try1>'s dependencies whose wff is equal to <wff> *
+; *     and any assumption in <try2>'s dependencies whose wff is equal  *
+; *     "not <wff>".							*
+; *                                                                     *
+; ***********************************************************************
+;
+(DEFLAM TRYTERMIFI# ()
+ (LET ((try1 (TRY#)))
+  (SEQ
+   (TK@ COMMA)
+   (LET ((try2 (TRY#)))
+    (SEQ
+     (TK@ COMMA)
+     (LET ((wff (WFF#)))
+      (SEQ
+       (TK@ COMMA)
+       (LET ((term1 (TERM#)))
+        (SEQ
+         (TK@ COMMA)
+         (LET ((term2 (TERM#)))
+          (SEQ
+           (ENDL)
+           (trytermifi try1 try2 wff term1 term2))))))))))))
+
+; TRYWFFIFE: Wff if elimination command
+; ***********************************************************************
+; *                                                                     *
+; * SYNTAX                                                              *
+; *   trywffife <try1> <try2> 						*
+; *                                                                     *
+; * DESCRIPTION                                                         *
+; *   wffife preconditions: <try1>'s wff must be a wffif  and           *
+; *     <try2>'s wff must be <try1> wff's condition.			*
+; *   wffife rule function: deduce a try whose wff is the          	*
+; *     "then part" (thenof(<wffif>)) of <try1>'s wff.                  *
+; *                                                                     *
+; ***********************************************************************
+;
+(DEFLAM TRYWFFIFE# ()
+ (LET ((try1 (TRY#)))
+  (SEQ
+   (TK@ COMMA)
+   (LET ((try2 (TRY#)))
+    (SEQ
+     (ENDL)
+     (trywffife try1 try2))))))
+
+; TRYWFFIFE: Wff if elimination command (with a negation)
+; ***********************************************************************
+; *                                                                     *
+; * SYNTAX                                                              *
+; *   trywffifen <try1> <try2> 						*
+; *                                                                     *
+; * DESCRIPTION                                                         *
+; *   wffife preconditions: <try1>'s wff must be a wffif  and           *
+; *     <try2>'s wff must be the negation of <try1> wff's condition     *
+; *   wffife rule function: deduce a try whose wff is the          	*
+; *     "else part" (elseof(<wffif>)) of <try1>'s wff.                  *
+; *                                                                     *
+; * NOTE:                                                               *
+; *   <try2>'s wff must be the nagation of the condition and no         *
+; *   viceversa. If <try1>'s wff = wffif not A then B else C,           *
+; *                 <try2>'s wff = A, the rule preconditions are not    *
+; *                   satisfied                                         *
+; *                                                                     *
+; ***********************************************************************
+;
+(DEFLAM TRYWFFIFEN# ()
+ (LET ((try1 (TRY#)))
+  (SEQ
+   (TK@ COMMA)
+   (LET ((try2 (TRY#)))
+    (SEQ
+     (ENDL)
+     (trywffifen try1 try2))))))
+
+; TRYWFFIFI: Wff if introduction command 
+; ***********************************************************************
+; *                                                                     *
+; * SYNTAX                                                              *
+; *   trywffifi <wff> <try1> <try2> 					*
+; *                                                                     *
+; * DESCRIPTION                                                         *
+; *   wffifi preconditions: NONE					*
+; *   wffife rule function: deduce a try whose wff is the          	*
+; *     "wffif <wff> then <<try1>'s wff> else <<fac2t>'s wff>".         *
+; *     The rule discharges any assumption in <try1>'s dependencies     *
+; *     whose wff is equal to <wff>					*
+; *     and any assumption in <try2>'s dependencies whose wff is equal  *
+; *     "not <wff>".                                                    *
+; ***********************************************************************
+;
+(DEFLAM TRYWFFIFI# ()
+ (LET ((wff (WFF_OR_TRY#)))
+  (SEQ
+   (TK@ COMMA)
+   (LET ((try1 (TRY#)))
+    (SEQ
+     (TK@ COMMA)
+     (LET ((try2 (TRY#)))
+      (SEQ
+       (ENDL)
+       (trywffifi wff try1 try2))))))))

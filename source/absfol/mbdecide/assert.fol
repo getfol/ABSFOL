@@ -1,0 +1,31 @@
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (tdecide wff tries rewriters-list decider)                        *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   wff : the formula we are trying to decide.                       *
+;*   tries : tries, if we want to decide whether formula is entailed  *
+;*           by them. MTL otherwise.                                  *
+;*   rewriters-list : rewriting procedures we want to apply in the    *
+;*                    rewriting step, in order of application.        *
+;*                    MTL if no rewriting is needed(wanted).          *
+;*   decider : decider we want use to decide the formula resulting    *
+;*             from application of rewriting procedures.              *
+;*                                                                    *
+;*  The procedure accomplishes the following steps:                   *
+;*                                                                    *
+;*  1) it generates the implication <tries> -> wff.                   *
+;*  2) it applies in sequence the rewriting procedures passed in list *
+;*     <rewriters-list>, from the first to the last, using the        *
+;*     resulting formula from application of procedure <i> as input   *
+;*     formula for procedure <i+1>.                                   *
+;*  3) it applies the decider to the obtained formula : if the        *
+;*     formula is a tautology, <wff> is asserted in the proof else,   *
+;*     it concludes that the formula is not decidable with the        *
+;*     specified strategy.                                            *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM tdecide (wff tries rewr-list decider)
+ (APLLY decider (LIST (rewr-apply rewr-list (tries_imp_wff-mak wff tries)))))

@@ -1,0 +1,616 @@
+;*****************************************************************************
+;*                                                                           *
+;* - cmdabs.fol                                                              *
+;*                                                                           *
+;* This file includes the code of the abstraction commands.                  *
+;* There are three families of abstraction commands:                         *
+;* - 1. commands for declaring an abstraction                                *
+;* - 2. commands for applying an abstraction                                 *
+;* - 3. commands for deleting an abstraction                                 *
+;* - 4. utility commands                                                     *
+;*                                                                           *
+;*****************************************************************************
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 1 - the Declaration of an abstraction:                                    *
+;*     ABSTRACTION and its options:                                          *
+;*     - ABSTRACTION DECLARE                                                 *
+;*     - ABSTRACTION PROTOTYPE                                               *
+;*     - ABSTRACTION INSTANTIATE                                             *
+;*                                                                           *
+;*****************************************************************************
+(DEFLAM ABSTRACTION# ()
+ (HGKM-APPLY (GET-FUN (GETABSTRACTION (CAPITALIZE (CUR-TOKEN)))) MTL))
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;*  1.1 ABSTRACTION DECLARE  -  declares a new abstraction directly          *
+;*                                                                           *
+;*                                                                           *
+;*  SINTAX :                                                                 *
+;*                                                                           *
+;*  ABSTRACTION DECLARE  <new abstraction name>                              *
+;*  ground <ground context name>                                             *
+;*  abstract <abstract context name>                                         *
+;*  OPT [PI|TI|PD|TD|PC|TC]                                                  *
+;*  flambda                                                                  *
+;*      maps                                                                 *
+;*          inds    OPT [ : <list of individual map-pairs>   ]               *
+;*          sents   OPT [ : <list of sentence map-pairs>     ]               *
+;*          funs    OPT [ : <list of function map-pairs>     ]               *
+;*          preds   OPT [ : <list of predicate map-pairs>    ]               *
+;*      rules                                                                *
+;*          <list of absrules>                                               *
+;*  OPT [fomega lambdaomega]                                                 *
+;*  OPT [fdelta lambdadelta];                                                *
+;*                                                                           *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*                                                                           *
+;*     ABSDECLARE#   Parses and generates a new abstraction,                 *
+;*                   adding it to the global abstraction list.               *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM ABSDECLARE# ()
+ (LET ((name (NEWABSNAME#)))
+  (LET ((gndctx (GNDCTX#)))
+   (LET ((absctx (ABSCTX#)))
+    (LET ((abskind (ABSKIND@)))
+     (LET ((flambda (FLAMBDA#)))
+      (LET ((fomega (FOMEGA@)))
+       (LET ((fdelta (FDELTA@)))
+        (SEQ
+         (ENDL)
+         (absdeclare 
+            (abstraction-mak name gndctx absctx abskind flambda fomega fdelta)
+))))))))))
+
+
+ 
+;*****************************************************************************
+;*                                                                           *
+;*  1.2 ABSTRACTION PROTOTYPE  -  declares a new abstraction prototype       *
+;*                                                                           *
+;*                                                                           *
+;*  SINTAX :                                                                 *
+;*                                                                           *
+;*  ABSTRACTION PROTOTYPE <new abstraction prototype name>                   *
+;*  flambda                                                                  *
+;*      rules                                                                *
+;*          <list of absrules>                                               *
+;*                                                                           *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*                                                                           *
+;*     ABSTYPE#    Parses the declaration of a new abstraction type          *
+;*                                                                           *
+;*****************************************************************************
+                                                                         
+(DEFLAM ABSTYPE# ()
+ (LET ((typename (NEWABSTYPENAME#)))
+  (SEQ
+   (TKC# 'FLAMBDA "`FLAMBDA'")
+   (TKC# 'RULES "`RULES'")
+   (LET ((absrules (ABSRULES#)))
+       (SEQ
+        (ENDL)
+        (abstypelist-add-abstype 
+           (abstype-mak typename absrules)))))))
+
+
+
+ 
+;*****************************************************************************
+;*                                                                           *
+;* 1.3  ABSTRACTION INSTANTIATE  -  declares a new abstraction               *
+;*                                  by instantiating a prototype             *
+;*                                                                           *
+;* SINTAX :                                                                  *
+;*                                                                           *
+;* ABSTRACTION INSTANTIATE <abstypename> to <newabsname> by                  *
+;* ground <ground context name>                                              *
+;* abstract <abstract context name>                                          *
+;* OPT [PI|TI|PD|TD|PC|TC]                                                   *
+;* flambda                                                                   *
+;*     maps <absmaps>                                                        *
+;*     OPT [newrules <absrules>]                                             *
+;* OPT [fomega lambdaomega]                                                  *
+;* OPT [fdelta lambdadelta];                                                 *
+;*                                                                           *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*                                                                           *
+;*    ABSINSTANTIATE#  Parses the instantiation of an abstraction prototype. *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM ABSINSTANTIATE# ()
+ (LET ((typename (ABSTYPENAME#)))
+  (LET ((abstype (abstypelist-get-abstype typename)))
+   (SEQ 
+    (TKC# 'TO "TO")
+    (LET ((absname (NEWABSNAME#)))
+     (SEQ 
+      (TKC# 'BY "BY")
+      (LET ((gndctx (GNDCTX#)))
+       (LET ((absctx (ABSCTX#)))
+        (LET ((abskind (ABSKIND@)))
+         (LET ((partialflambda (PARTIALFLAMBDA#)))
+          (LET ((fomega (FOMEGA@)))
+           (LET ((fdelta (FDELTA@)))
+           (SEQ
+            (ENDL)
+            (absdeclare 
+             (abstype-instantiate absname 
+               gndctx absctx abstype abskind partialflambda fomega fdelta)
+))))))))))))))
+
+
+
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 2 - the application of abstraction:                                       *
+;*     ABSTRACT and its options:                                             *
+;*     - ABSTRACT ALPHABET (et al.)                                          *
+;*     - ABSTRACT WFF\TERMS                                                  *
+;*     - ABSTRACT AXIOM\THEORY                                               *
+;*     - ABSTRACT THEOREM                                                    *
+;*                                                                           *
+;* SYNTAX:                                                                   *
+;*                                                                           *
+;* ABSTRACT <object-type-key> {object-type option sintax}                    *
+;*                                                                           *
+;*****************************************************************************
+(DEFLAM ABSTRACT# ()
+ (HGKM-APPLY (GET-FUN (GETABSTRACT (CAPITALIZE (CUR-TOKEN)))) MTL))
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 2.1 - ABSTRACT ALPHABET (et al.) - generates the abstract alphabet        *
+;*                                                                           *
+;* SYNTAX:                                                                   *
+;*                                                                           *
+;* ABSTRACT INDCONST  <indconst>  BY <abstraction name>                      *
+;* ABSTRACT INDPAR    <indpar>    BY <abstraction name>                      *
+;* ABSTRACT INDVAR    <indvar>    BY <abstraction name>                      *
+;* ABSTRACT SENTCONST <sentconst> BY <abstraction name>                      *
+;* ABSTRACT SENTPAR   <sentpar>   BY <abstraction name>                      *
+;* ABSTRACT FUNCONST  <funconst>  BY <abstraction name>                      *
+;* ABSTRACT FUNPAR    <funpar>    BY <abstraction name>                      *
+;* ABSTRACT PREDCONST <predconst> BY <abstraction name>                      *
+;* ABSTRACT PREDPAR   <predpar>   BY <abstraction name>                      *
+;*                                                                           *
+;* ABSTRACT INDCONSTS   BY <abstraction name>                                *
+;* ABSTRACT INDPARS     BY <abstraction name>                                *
+;* ABSTRACT INDVARS     BY <abstraction name>                                *
+;* ABSTRACT SENTCONSTS  BY <abstraction name>                                *
+;* ABSTRACT SENTPARS    BY <abstraction name>                                *
+;* ABSTRACT FUNCONSTS   BY <abstraction name>                                *
+;* ABSTRACT FUNPARS     BY <abstraction name>                                *
+;* ABSTRACT PREDCONSTS  BY <abstraction name>                                *
+;* ABSTRACT PREDPARS    BY <abstraction name>                                *
+;*                                                                           *
+;* ABSTRACT INDSYMS   BY <abstraction name>                                  *
+;* ABSTRACT SENTSYMS  BY <abstraction name>                                  *
+;* ABSTRACT FUNSYMS   BY <abstraction name>                                  *
+;* ABSTRACT PREDSYMS  BY <abstraction name>                                  *
+;*                                                                           *
+;* ABSTRACT ALPHABET  BY <abstraction name>                                  *
+;*                                                                           *
+;*****************************************************************************
+
+ 
+
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 2.1.1      abstract single symbols                                        *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*                                                                           *
+;*    <SYNTYPE>-ABSTRACT#  Each parses the command of abstracting a          *
+;*                         symbol of its specific <syntype>.                 *
+;*    SYM-ABSTRACT#        Parse the command of abstracting a generic symbol.*
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM INDCONST-ABSTRACT# () (SYM-ABSTRACT# (INDCONST#)))
+(DEFLAM INDPAR-ABSTRACT#   () (SYM-ABSTRACT# (INDPAR#)))
+(DEFLAM INDVAR-ABSTRACT#   () (SYM-ABSTRACT# (INDVAR#)))
+
+(DEFLAM SENTCONST-ABSTRACT# () (SYM-ABSTRACT# (SENTCONST#)))
+(DEFLAM SENTPAR-ABSTRACT#   () (SYM-ABSTRACT# (SENTPAR#)))
+
+(DEFLAM FUNCONST-ABSTRACT# () (SYM-ABSTRACT# (FUNCONST#)))
+(DEFLAM FUNPAR-ABSTRACT#   () (SYM-ABSTRACT# (FUNPAR#)))
+
+(DEFLAM PREDCONST-ABSTRACT# () (SYM-ABSTRACT# (PREDCONST#)))
+(DEFLAM PREDPAR-ABSTRACT#   () (SYM-ABSTRACT# (PREDPAR#)))
+
+
+
+(DEFLAM SYM-ABSTRACT# (sym)
+  (IFN (abssym-sort-test&print sym)
+   (PRINTMES "You can't apply abstractions to sorted languages!")
+   (SEQ
+    (TKC# 'BY "BY")
+    (LET ((absname (ABSNAME#)))
+     (LET ((abstraction (abslist-get-abs absname)))
+      (LET ((gndctx (abstraction-get-gndctx  abstraction)))
+       (IFN (EQUAL (curcname-get) gndctx)
+        (PRINTMES "Ground context must be the same as current one.")
+        (SEQ
+         (ENDL)
+         (sym-applabs sym abstraction)))))))))
+
+
+ 
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 2.1.2   abstract whole groups of symbols                                  *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*     ALLSYMS-ABSTRACT#    Parses the abstraction command of the whole      *
+;*                          alphabet.                                        *
+;*     <SYNTYPE>S-ABSTRACT# Each parses the abstraction command of its       *
+;*                          specific group of symbols.                       *
+;*     SYMS-ABSTRACT#       Parses the generical command of abstracting      *
+;*                          a group of symbols.                              *
+;*  cursyms-get             It gives back a list of (the labels of)          *
+;*                          all symbols of the given type which belong       *
+;*                          to current context.                              *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM ALLSYMS-ABSTRACT# () 
+  (SYMS-ABSTRACT# (APPEND (cursyms-get 'Indconst)
+                          (cursyms-get 'Indpar)
+                          (cursyms-get 'Indvar)
+                          (cursyms-get 'Sentconst)
+                          (cursyms-get 'Sentpar)
+                          (cursyms-get 'Funconst)
+                          (cursyms-get 'Funpar)
+                          (HGKM-DELETE Mostgeneral (cursyms-get 'Predconst))
+                          (cursyms-get 'Predpar))))
+
+
+(DEFLAM INDSYMS-ABSTRACT# ()(SYMS-ABSTRACT# (APPEND (cursyms-get 'Indconst)
+                                                    (cursyms-get 'Indpar)
+                                                    (cursyms-get 'Indvar))))
+                                                    
+(DEFLAM SENTSYMS-ABSTRACT# ()(SYMS-ABSTRACT# (APPEND (cursyms-get 'Sentconst)
+                                                     (cursyms-get 'Sentpar))))
+                                                    
+(DEFLAM FUNSYMS-ABSTRACT# () (SYMS-ABSTRACT# (APPEND (cursyms-get 'Funconst)
+                                                    (cursyms-get 'Funpar))))
+                                                    
+(DEFLAM PREDSYMS-ABSTRACT# ()  
+   (SYMS-ABSTRACT# (APPEND (HGKM-DELETE Mostgeneral (cursyms-get 'Predconst))
+                           (cursyms-get 'Predpar))))
+                                                    
+
+
+(DEFLAM INDCONSTS-ABSTRACT# () (SYMS-ABSTRACT# (cursyms-get 'Indconst)))
+(DEFLAM INDPARS-ABSTRACT#   () (SYMS-ABSTRACT# (cursyms-get 'Indpar)))
+(DEFLAM INDVARS-ABSTRACT#   () (SYMS-ABSTRACT# (cursyms-get 'Indvar)))
+
+(DEFLAM SENTCONSTS-ABSTRACT# () (SYMS-ABSTRACT# (cursyms-get 'Sentconst)))
+(DEFLAM SENTPARS-ABSTRACT#   () (SYMS-ABSTRACT# (cursyms-get 'Sentpar)))
+
+(DEFLAM FUNCONSTS-ABSTRACT# () (SYMS-ABSTRACT# (cursyms-get 'Funconst)))
+(DEFLAM FUNPARS-ABSTRACT#   () (SYMS-ABSTRACT# (cursyms-get 'Funpar)))
+
+(DEFLAM PREDCONSTS-ABSTRACT# () 
+  (SYMS-ABSTRACT# (HGKM-DELETE Mostgeneral (cursyms-get 'Predconst))))
+(DEFLAM PREDPARS-ABSTRACT# () (SYMS-ABSTRACT# (cursyms-get 'Predpar)))
+
+
+(DEFLAM SYMS-ABSTRACT# (syms)
+  (SEQ
+   (TKC# 'BY "BY")
+   (LET ((absname (ABSNAME#)))
+    (LET ((abstraction (abslist-get-abs absname)))
+     (LET ((gndctx (abstraction-get-gndctx  abstraction)))
+      (IFN (EQUAL (curcname-get) gndctx)
+       (PRINTMES "Ground context must be the same as current one.")
+       (IF (MTL? syms)
+        (PRINTMES "There is no ground symbol to abstract.")
+        (IFN (abssyms-sort-test&print syms)
+         (PRINTMES  "You can't apply abstractions to sorted languages!")
+         (SEQ
+          (ENDL)
+          (syms-applabs abstraction syms))))))))))
+ 
+
+
+
+(DEFSUB cursyms-get (syntype) 
+  (ls-get-all_objs (cur-cxt-symls-get-ls syntype)))
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 2.2 - ABSTRACT TERM\WFF - applies an abstraction to simple expressions    *
+;*                          the abstract context is not modified             *
+;*                                                                           *
+;* SYNTAX:                                                                   *
+;*                                                                           *
+;* ABSTRACT TERM <term> BY <abstraction name>                                *
+;* ABSTRACT WFF  <wff>  BY <abstraction name>                                *
+;*                                                                           *
+;*                                                                           *
+;* DESCRIPTION:                                                              *
+;*                                                                           *
+;*    TERM-ABSTRACT#  Parses the command of abstracting a term.              *
+;*    WFF-ABSTRACT#   Parses the command of abstracting a wff.               *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM TERM-ABSTRACT# ()
+ (LET ((term (TERM#)))
+  (SEQ 
+   (TKC# 'BY "BY")
+   (LET ((absname (ABSNAME#)))    
+    (LET ((abstraction (abslist-get-abs absname)))
+     (LET ((gndctx (abstraction-get-gndctx  abstraction)))
+      (IFN (EQUAL (curcname-get) gndctx)
+       (PRINTMES "Ground context must be the same as current one.")
+       (SEQ
+        (ENDL)
+        (term-applabs term abstraction)))))))))
+ 
+
+
+(DEFLAM WFF-ABSTRACT# ()
+ (LET ((wff (WFF#)))
+  (SEQ 
+   (TKC# 'BY "BY")
+   (LET ((absname (ABSNAME#)))    
+    (LET ((abstraction (abslist-get-abs absname)))
+     (LET ((gndctx (abstraction-get-gndctx  abstraction)))
+      (IFN (EQUAL (curcname-get) gndctx)
+       (PRINTMES "Ground context must be the same as current one.")
+       (SEQ
+        (ENDL)
+        (wff-applabs wff abstraction)))))))))
+ 
+
+
+ 
+
+;*****************************************************************************
+;*                                                                           *
+;* 2.3 - ABSTRACT AXIOM/THEORY - generates new abstract axioms/theories      *
+;*                               by the application of an abstraction        *
+;*                               to ground ones                              *
+;*                                                                           *
+;* SYNTAX:                                                                   *
+;*                                                                           *
+;* ABSTRACT AXIOM  <axiom name>  BY <abstraction name> [TO <new axiom name>] *
+;* ABSTRACT THEORY <theory name> BY <abstraction name>                       *
+;*                                                                           *
+;*                                                                           *
+;* DESCRIPTION:                                                              *
+;*                                                                           *
+;*    AXIOM-ABSTRACT#   Parses the command of abstracting an axiom.          *
+;*    THEORY-ABSTRACT#  Parses the command of abstracting a theory,          *
+;*                      i.e a set of axioms.                                 *
+;*                                                                           *
+;* NOTE:                                                                     *
+;*                                                                           *
+;* The abstraction used must be Lambda\Omega-invariant.                      *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM AXIOM-ABSTRACT# ()
+ (LET ((axiomname (FOLSYM# "ABSTRACT AXIOM")))
+  (IFN (AXLABEL? axiomname)
+   (PRINTMES4 axiomname " is not the name of an axiom in " (curcname-get) ".")
+   (LET ((axiom (axioms-get-axiom axiomname)))
+    (SEQ
+     (TKC# 'BY "BY")
+     (LET ((absname (ABSNAME#)))
+      (LET ((abstraction (abslist-get-abs absname)))
+       (IFN (LAMBDAOMEGA? abstraction)
+        (PRINTMES "You must use a Lambda\\Omega-invariant abstraction.")
+        (LET ((gndctx (abstraction-get-gndctx  abstraction)))
+         (IFN (EQUAL (curcname-get) gndctx)
+          (PRINTMES "Ground context must be the same as current one.")
+          (IF (IST (TKC@ 'TO))
+           (LET ((absaxiomname (FOLSYM# "ABSTRACT AXIOM")))
+            (SEQ
+             (ENDL)
+             (axiom-applabs axiom absaxiomname abstraction)))
+           (LET ((absaxiomname (default-axiom-rename absname axiomname)))
+            (SEQ
+             (ENDL)
+             (axiom-applabs axiom absaxiomname abstraction)
+)))))))))))))
+
+
+(DEFLAM THEORY-ABSTRACT# ()
+ (LET ((theoryname (FOLSYM# "ABSTRACT THEORY")))
+  (IFN (THLABEL theoryname)
+   (PRINTMES4 theoryname " is not the name of an theory in " (curcname-get) ".")
+   (LET ((theory (theories-get-theory theoryname)))
+    (LET ((axlabels (theory-get-axlabels theory)))
+     (LET ((axioms (MAPCAR 'axioms-get-axiom axlabels)))
+      (SEQ
+       (TKC# 'BY "BY")
+       (LET ((absname (ABSNAME#)))
+        (LET ((abstraction (abslist-get-abs absname)))
+         (IFN (LAMBDAOMEGA? abstraction)
+          (PRINTMES "You must use a Lambda\\Omega-invariant abstraction.")
+          (LET ((gndctx (abstraction-get-gndctx  abstraction)))
+           (IFN (EQUAL (curcname-get) gndctx)
+            (PRINTMES "Ground context must be the same as current one.")
+            (LET ((abstheoryname (default-axiom-rename absname theoryname)))
+             (LET ((absaxiomnames (default-axioms-rename absname axlabels)))
+              (SEQ             
+               (ENDL)
+               (theory-applabs 
+                abstheoryname axioms absaxiomnames abstraction))))))))))))))))
+                                                            
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 2.4 - ABSTRACT THEOREM      - generates new abstract theorems             *
+;*                               by the application of an abstraction        *
+;*                               to ground ones.                             *
+;*                                                                           *
+;* SYNTAX:                                                                   *
+;*                                                                           *
+;* ABSTRACT THEOREM  <theorem label>  BY <abstraction name>                  *
+;*                                                                           *
+;*                                                                           *
+;* DESCRIPTION:                                                              *
+;*                                                                           *
+;*    THEOREM-ABSTRACT#  Parses the command of abstracting a theorem.        *
+;*                                                                           *
+;*                                                                           *
+;* NOTE:                                                                     *
+;*                                                                           *
+;*  The abstraction used must be truthful (TI).                              *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM THEOREM-ABSTRACT# ()
+ (LET ((theorem (LINEREF#)))
+   (IFN (MTL? (line-get-deplist theorem))
+    (PRINTMES "The proof line given is not a theorem.")
+    (SEQ
+     (TKC# 'BY "BY")
+     (LET ((absname (ABSNAME#)))
+      (LET ((abstraction (abslist-get-abs absname)))
+       (LET ((gndctx (abstraction-get-gndctx  abstraction)))
+        (IFN (EQUAL (curcname-get) gndctx)
+         (PRINTMES "Ground context must be the same as current one.")
+         (IFN (TI-ABSKIND? (abstraction-get-abskind abstraction))
+          (PRINTMES "You must use a truthful abstraction.")
+          (SEQ
+           (ENDL)
+           (theorem-applabs theorem abstraction)))))))))))
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 3 - the Deletion of one or all abstractions:                              *
+;*                                                                           *
+;*  SYNTAX:                                                                  *
+;*     DELABSTRACTIONS |                                                     *
+;*     DELABSS                                                               *
+;*     DELABSTRACTION <absname> |                                            *
+;*     DELABS <absname>                                                      *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*   - DELABSTRACTIONS#          deletes all declared abstractions           *
+;*   - DELABSTRACTION#           deletes an abstraction                      *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM DELABSTRACTION# () 
+ (LET ((absname (ABSNAME#)))
+  (SEQ
+   (abslist-del-abs absname)
+   (PRINTMES3 "The abstraction `" absname "' has been deleted."))))
+
+
+(DEFLAM DELABSTRACTIONS# () 
+ (SEQ
+  (abslist-reset)
+  (PRINTMES "All abstractions have been deleted.")))
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;*  4 - Utility commands:                                                    *
+;*       - ABSTERM                                                           *
+;*       - ABSWFF                                                            *
+;*       - ABSAWFF                                                           *
+;*                                                                           *
+;*  These commands are useful for whoever wants to write new abstractions    *
+;*  or abstractions types as they check whether a sequence of tokens is      *
+;*  recognised by the parser to be an `absexpression' or not. This comes     *
+;*  to be a necessary tool for unskilled users in order to write right       *
+;*  sides of rules.                                                          *
+;*                                                                           *
+;*  SINTAX :                                                                 *
+;*                                                                           *
+;*  - ABSTERM <absterm>                                                      *
+;*  - ABSWFF  <abswff>                                                       *
+;*  - ABSAWFF <absawff>                                                      *
+;*                                                                           *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*                                                                           *
+;*   ABSTERMCMD#  Parses an absterm checking its syntaptic correctness.      *
+;*   ABSAWFFCMD#  Parses an atomic abswff checking its syntaptic correctness.*
+;*   ABSWFFCMD#   Parses an abswff checking its syntaptic correctness.       *
+;*                                                                           *
+;*****************************************************************************
+
+
+(DEFLAM ABSTERMCMD# ()
+   (LET ((ABSTRM (ABSTERM#)))
+    (SEQ
+     (printabsexp ABSTRM)
+     (HGKM-PRINC " is an <absterm>."))))
+
+
+(DEFLAM ABSAWFFCMD# ()
+   (LET ((AW (ABSAWFF#)))
+    (SEQ
+     (printabsexp AW)
+     (HGKM-PRINC " is an <absawff>."))))
+
+
+(DEFLAM ABSWFFCMD# ()
+   (LET ((W (ABSWFF#)))
+    (SEQ
+     (printabsexp W)
+     (HGKM-PRINC " is an <abswff>."))))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,35 @@
+;**********************************************************************
+;*                                                                    *
+;* 			      reason.hgk                              *
+;*                                                                    *
+;* This file contains all the constructors and selectors for reason   *
+;* and part of reason.                                                *
+;*                                                                    *
+;**********************************************************************
+;**********************************************************************
+;*                                                                    *
+;* Constructors for the reason of a try.  Observe that the law of     *
+;* construction is slightly different from the one used for facts: In *
+;* particular, test are done to modify the reason of a try if the try *
+;* has been deduced from an axiom, the reason is                      *
+;*                                                                    *
+;*    AXIOM %AXIOM% axiomlabel                                        *
+;*                                                                    *
+;* instead of FACT .....  same stuff if the reason is                 *
+;* AXIOMINSTANTIATE                                                   *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM try_ra-mak (try)
+ (LET ((rule (reason-get-rule (try-get-reason try)))
+       (ras (reason-get-ras (try-get-reason try))))
+  (IF (EQ rule 'AXIOM)
+   (axiom_ra-mak (CAR (ra-get-value (ras-get-first ras))))
+   (IF (EQ rule 'AXIOMINSTANTIATION)
+    (axiomschema_ra-mak (CONS (CAR (ra-get-value (ras-get-first ras)))
+                              (CADR ras)))
+    (ra-mak '%TRY% (try-get-label try)))))))
+
+(DEFSUB tries_ra-mak (TRIES) (ra-mak '%TRIES% TRIES))
+(DEFSUB TRY_RA (RA) (EQ (ra-get-type RA) '%TRY%))
+(DEFSUB TRIES_RA (RA) (EQ (ra-get-type RA) '%TRIES%))

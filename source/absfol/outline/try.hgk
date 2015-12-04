@@ -1,0 +1,87 @@
+;**********************************************************************
+;*                                                                    *
+;*  This file contains all the code necessary to deal with tries.     *
+;*                                                                    *
+;**********************************************************************
+
+;**********************************************************************
+;*                                                                    *
+;*                     <try> Data Structure                           *
+;*                                                                    *
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   <try>   ::= < <label> . <wff> . <deplist> . <below> . <reason> > *
+;*   <label>    ::= <id>                                              *
+;*   <below>   ::= ALT [ NOBELOW | STARBELOW | <id> ]                 *
+;*   <id>       ::= < NATNUM | NATNUM >                               *
+;*   <deplist>  ::= ALT [ Emptydeplist | <depl-elem> ]                *
+;*   <depl-elem>::= < <label> . <lab-list> > ]                        *
+;*   <lab-list> ::= ALT [ <depl-elem> | MTL ]                         *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   The proof Data structure cannot be used to represent "outline",  *
+;*   because the assignement mechanism of "proof-labels" (NATNUM),    *
+;*   does not allow the insertion of new nodes between formulaes      *
+;*   trees. Has been defined a new type of <label> to univocally      *
+;*   identify <try>.                                                  *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB try-mak (LABEL WFF DEPLIST BELOW REASON) 
+  (CONS LABEL (CONS WFF (CONS DEPLIST (CONS BELOW REASON)))))
+(DEFSUB try-get-label (LINE) (CAR LINE))
+(DEFSUB try-get-wff (LINE) (CAR (CDR LINE)))
+(DEFSUB try-get-deplist (LINE) (CAR (CDR (CDR LINE))))
+(DEFSUB try-get-below (LINE) (CAR (CDR (CDR (CDR LINE)))))
+(DEFSUB try-get-reason (LINE) (CDR (CDR (CDR (CDR LINE)))))
+
+(DEFSUB deplist-union4id (dep1 dep2) (ID-UNIONLE dep1 dep2))
+(DEFSUB deplist-del-try-label (label deplist) (ID-OUTOF label deplist))
+
+(DEFSUB try-replace-reason (try reason) (SETCDR (CDR (CDR (CDR try))) reason))
+
+
+;**********************************************************************
+;*                                                                    *
+;*                   <label> Data Structure                           *
+;*                                                                    *
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   <label> ::= ALT [ NOBELOW | STARBELOW | <id> ]                   *
+;*   <id>    ::= < NATNUM | NATNUM >                                  *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB id-mak (left right) (CONS left right))
+(DEFSUB id-get-left (id) (CAR id))
+(DEFSUB id-get-right (id) (CDR id))
+(DEFSUB starbel-mak () 'STARBELOW)
+(DEFSUB nobel-mak () 'NOBELOW)
+
+(DEFSUB ID-EQUAL (id1 id2) (EQUAL id1 id2))
+(DEFSUB ID-GT (id1 id2)
+ (OR (GT (id-get-left id1)(id-get-left id2))
+     (AND (EQ (id-get-left id1)(id-get-left id2))
+	  (GT (id-get-right id1)(id-get-right id2)))))
+(DEFSUB ID-LT (id1 id2)
+ (OR (LT (id-get-left id1)(id-get-left id2))
+     (AND (EQ (id-get-left id1)(id-get-left id2))
+	  (LT (id-get-right id1)(id-get-right id2)))))
+(DEFSUB STAR-BELOW? (id) (EQ id (starbel-mak)))
+(DEFSUB NO-BELOW? (id) (EQ id (nobel-mak)))
+
+(DEFLAM ID-UNIONLE (list1 list2)
+ (IF (MTL? list1) list2
+  (IF (MTL? list2) list1
+   (IF (ID-GT (FIRST list1) (FIRST list2))
+    (LCONS (FIRST list1) (ID-UNIONLE (REST list1) list2))
+    (IFN (ID-EQUAL (FIRST list1) (FIRST list2))
+     (LCONS (FIRST list2) (ID-UNIONLE list1 (REST list2)))
+     (LCONS (FIRST list1) (ID-UNIONLE (REST list1) (REST list2))))))))
+
+(DEFLAM ID-OUTOF (M L)
+ (IF (EQUAL M (FIRST L))
+  (ID-OUTOF M (REST L))
+  (LCONS (FIRST L)(ID-OUTOF M (REST L)))))

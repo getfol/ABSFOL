@@ -1,0 +1,410 @@
+;**********************************************************************
+;*                                                                    *
+;*  This file contains the low level routines for mapping back.       *
+;*                                                                    *
+;**********************************************************************
+
+;**********************************************************************
+;*                                                                    *
+;*  Mapping back a fact:                                              *
+;*                                                                    *
+;*  We want to have the following informations transferred from       *
+;*  the abstract fact to the ground try:                              *
+;*                                                                    *
+;*    label    ---> to construct the label of the try                 *
+;*    wff      ---> obvious                                           *
+;*    below    ---> obvious                                           *
+;*    reason   ---> the reason of a try is a suggestion on how to     *
+;*                  build the ground proof.                           *
+;*                                                                    *
+;*  A new data structure, <abstry> is created to trasnfer all these   *
+;*  objects from a context to another. A <abstry> contains a          *
+;*  temporary representation of every single data structure:          *
+;*                                                                    *
+;*    <abstry>     ::= <abslabel> <abswff> <absreason>                *
+;*    <absbelow>   ::= NATNUM*   (a natnum plus 0)                    *
+;*    <absexp>     ::= <labexp>                                       *
+;*    <absreason>  ::= will be explained later on.                    *
+;*                                                                    *
+;*  Functions to handle with this new data structure, as well as      *
+;*  functions to handle partial transformation are provided.          *
+;*                                                                    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB abstry-mak (abslabel abswff absbelow absreason)
+  (LIST abslabel abswff absbelow absreason))
+(DEFSUB abstry-get-abslabel (abstry) (CAR abstry))
+(DEFSUB abstry-get-abswff (abstry) (HGKM-NTH 2 abstry))
+(DEFSUB abstry-get-absbelow (abstry) (HGKM-NTH 3 abstry))
+(DEFSUB abstry-get-absreason (abstry) (HGKM-NTH 4 abstry))
+
+;**********************************************************************
+;*                                                                    *
+;*  Partial function: from a fact to an abstry and from abs to try    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB fact2abstry (fact proof)
+ (abstry-mak
+  (label2abslabel (fact-get-label  fact))
+  (exp2labexp (fact-get-wff fact))
+  (fact-get-below fact proof)
+  (reason2absreason (fact-get-reason fact))))
+
+(DEFLAM facts2abstries (facts proof)
+ (IF (MTL? facts) MTL
+  (LCONS
+   (fact2abstry (FIRST facts) proof)
+   (facts2abstries (REST facts) proof))))
+
+(DEFSUB abstry2try (abstry)
+ (try-mak
+  (abslabel2label (abstry-get-abslabel abstry))
+  (labexp2exp (abstry-get-abswff abstry))
+  (deplist-mak (abslabel2label (abstry-get-abslabel abstry)))
+  (absbelow2below (abstry-get-absbelow abstry))
+  (absreason2reason (abstry-get-absreason abstry))))
+
+;**********************************************************************
+;*                                                                    *
+;*  Partial function from a label to an abslabel and                  *
+;*  from abslabel to try                                              *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB label2abslabel (label) label)
+(DEFSUB abslabel2label (abslabel) (mbid-mak abslabel))
+
+;**********************************************************************
+;*                                                                    *
+;*     partial function: from an exp to a labexp and viceversa        *
+;*                                                                    *
+;**********************************************************************
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX                                                            *
+;*   (sym2labsym sym)           from a symbol to a label              *
+;*   (exp2labexp exp)           from an exp to an exp of labels       *
+;*   (exp2labexp-list explist)  from a list of exps to a list of      *
+;*                              labexps                               *
+;*                                                                    *
+;*  NOTE                                                              *
+;*   exp2labexp needs to check wheter the functor is a logical        *
+;*   connective, a quantifier or any other kind of applied            *
+;*   symbol. Indeed, logical connectives and quantifiers must         *
+;*   remain un-translated                                             *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM exp2labexp (exp)
+ (IF (SIMPLE exp) (sym2labsym exp)
+  (LET ((functor (appl-get-functor exp)))
+   (IF (OR (SENTCONN functor) (QUANT functor) (EQ functor Equality))
+    (appl-mak functor (exps2labexps (appl-get-args exp)))
+    (appl-mak (sym2labsym functor)(exps2labexps (appl-get-args exp)))))))
+
+(DEFLAM exps2labexps (explist)
+ (IF (MTL? explist) MTL
+  (LCONS (exp2labexp (FIRST explist)) (exps2labexps (REST explist)))))
+
+(DEFSUB sym2labsym (sym) (rightsym-get-label (sym2rightsym sym)))
+
+(DEFLAM syms2labsyms (syms)
+ (IF (MTL? syms) MTL
+  (LCONS
+   (rightsym-get-label (sym2rightsym (FIRST syms)))
+   (syms2labsyms (REST syms)))))
+
+(DEFSUB labsym2sym (sym) (label2sym sym))
+
+(DEFLAM labsyms2syms (syms)
+ (IF (MTL? syms) MTL
+  (LCONS (labsym2sym (FIRST syms))(labsyms2syms (REST syms)))))
+
+;**********************************************************************
+;*                                                                    *
+;*     partial function: from a below to an absbelow and viceversa    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM fact-get-below (fact proof) 
+ (IF (MTL? proof) 0
+  (LET ((curfact (FIRST proof)))
+   (IF (FACT-IN-REASON? fact (fact-get-reason curfact))
+    (fact-get-label curfact)
+    (fact-get-below fact (REST proof))))))
+
+(DEFSUB FACT-IN-REASON? (fact reason)
+ (FACT-IN-RAS? fact (reason-get-ras reason)))
+
+(DEFLAM FACT-IN-RAS? (fact ras)
+ (IF (MTL? ras) FALSE
+  (IF (EQ fact (ra-get-value (ras-get-first ras))) TRUE
+   (FACT-IN-RAS? fact (ras-get-rest ras)))))
+
+(DEFSUB absbelow2below (absbelow)
+ (IF (INTEQ absbelow 0) (nobel-mak)
+  (mbid-mak absbelow)))
+
+;**********************************************************************
+;*                                                                    *
+;*    Partial function: from a reason to an abstract reason and       *
+;*    viceversa                                                       *
+;*                                                                    *
+;**********************************************************************
+
+;**********************************************************************
+;*                                                                    *
+;*   An abstract reason is a reason with just the informations        *
+;*   necessary to deduce the try: eg instead of having a              *
+;*   whole fact, it just have the label of the fact, and so           *
+;*   on.  Every symbol if translated into the corresponding           *
+;*   labsym, but the labels are maintained.                           *
+;*                                                                    *
+;*   When passing from absreason to SUGGESTION, labexp are            *
+;*   transformed into exps and labels into trylabels                  *
+;*                                                                    *
+;*   Note that now the reason is an important information on          *
+;*   how a try has been deduced and it is used by o2prf to            *
+;*   check wheter an outline is a proof.                              *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB indconst_ra2abs (ra)
+ (ra-mak (ra-get-type ra)(sym2labsym (ra-get-value ra))))
+
+(DEFSUB varorparlist_ra2abs (ra)
+ (ra-mak (ra-get-type ra) (syms2labsyms (ra-get-value ra))))
+
+(DEFSUB exp_ra2abs (ra)
+ (ra-mak (ra-get-type ra) (exp2labexp (ra-get-value ra))))
+
+(DEFSUB exps_ra2abs (ra)
+ (ra-mak (ra-get-type ra) (exps2labexps (ra-get-value ra))))
+
+(DEFSUB terms_ra2abs (ra)
+ (ra-mak (ra-get-type ra) (term_ra2abs (ra-get-value ra))))
+
+(DEFLAM term_ra2abs (value)
+ (IF (MTL? value) MTL
+  (LCONS (t_ra2abs (CAR value))(term_ra2abs (CDR value)))))
+
+(DEFSUB t_ra2abs (triple)
+ (LCONS (exp2labexp (CAR triple))
+        (LCONS (exp2labexp (CAR (CDR triple)))
+               (LCONS (CAR (CDR (CDR triple))) MTL))))
+
+;**********************************************************************
+;*                                                                    *
+;*          Translating A Fact                                        *
+;*                                                                    *
+;**********************************************************************
+;*                                                                    *
+;*  Because a fact may be originated by an axiom or by a axiom schema,*
+;*  the function to translate a fact into an abs fact performs the    *
+;*  followings steps:                                                 *
+;*  1. if the reason of the fact is AXIOM, make the reason AXIOM and  *
+;*     get the axiom's label.                                         *
+;*  2. if the reason of the fact is AXIOMSCHEMA, make the reason      *
+;*     AXIOMSCHEMA and get the label of the axiom and the information *
+;*     about the substitutions                                        *
+;*  3. if the reason of the fact is different from the two above,     *
+;*     just pick the label of the fact.                               *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM fact_ra2abs1 (fact)
+ (LET ((reason (fact-get-reason fact)))
+  (LET ((rule (reason-get-rule reason))
+	(ras (reason-get-ras reason)))
+   (LET ((ra (ras-get-first ras))
+	 (ra2 (ras-get-first (ras-get-rest ras))))
+    (IF (EQ rule 'AXIOM)
+     (axiom_ra-mak (fact-get-label (ra-get-value ra)))
+     (IF (EQ rule 'AXIOMINSTANTIATION)
+      (axiomschema_ra-mak 
+       (CONS (fact-get-label (ra-get-value ra))
+	     (wtsubstrep_ra2abs (ra-get-value ra2))))
+      (fact_ra-mak (fact-get-label fact))))))))
+
+(DEFSUB fact_ra2abs (ira) (fact_ra2abs1 (ra-get-value ira)))
+
+(DEFSUB facts_ra2abs (ra)
+ (facts_ra-mak (list-facts_ra2abs (ra-get-value ra))))
+ 
+(DEFLAM list-facts_ra2abs (ra)
+ (IF (MTL? ra) MTL
+  (LCONS (fact_ra2abs1 (FIRST ra)) (list-facts_ra2abs (REST ra)))))
+			     
+(DEFLAM wtsubstrep_ra2abs (wtsubstrep)
+ (IF (MTL? wtsubstrep) MTL
+  (LCONS (wtsubst_ra2abs (CAR wtsubstrep))
+         (wtsubstrep_ra2abs (CDR wtsubstrep)))))
+
+(DEFSUB wtsubst_ra2abs (wtsubst)
+ (LCONS (exp2labexp (CAR wtsubst))
+        (CONS (exp2labexp (CAR (CDR wtsubst)))
+              (exp2labexp (CDR (CDR wtsubst))))))
+
+(DEFSUB substlist_ra2abs (ra)
+ (ra-mak (ra-get-type ra) (substlist2abs (ra-get-value ra))))
+
+(DEFLAM substlist2abs (subst)
+ (IF (MTL? subst) MTL
+  (LCONS (CONS (sym2labsym (CAR (CAR subst))) (sym2labsym (CDR (CAR subst))))
+         (substlist2abs (CDR subst)))))
+
+(DEFSUB factand_ra2abs (ra)
+ (ra-mak (ra-get-type ra) (fact-get-label (ra-get-value ra))))
+
+(DEFSUB everyother_ra2abs (ra) ra)
+
+;**********************************************************************
+;*                                                                    *
+;*      From a ra to an absra                                         *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM ra2absra (ra)
+ (IF (INDCONST_RA ra) (indconst_ra2abs ra)
+  (IF (VARORPARLIST_RA ra) (varorparlist_ra2abs ra)
+   (IF (OR (TERM_RA ra)(EXP_RA ra)(WFF_RA ra)) (exp_ra2abs ra)
+    (IF (TERMS+OCC_RA ra) (terms_ra2abs ra)
+     (IF (OR (TERMS_RA ra)(WFFS_RA ra)) (exps_ra2abs ra)
+      (IF (OR (FACT_RA ra)(AXIOM_RA ra)(DEFN_RA ra)) (fact_ra2abs ra)
+       (IF (FACTS_RA ra) (facts_ra2abs ra)
+	(IF (SUBSTLIST_RA ra) (substlist_ra2abs ra)
+	 (IF (FACTAND_RA ra) (factand_ra2abs ra)
+	  (everyother_ra2abs ra)))))))))))
+
+(DEFSUB abs2indconst_ra (ra)
+ (ra-mak (ra-get-type ra) (labsym2sym (ra-get-value ra))))
+
+(DEFSUB abs2varorparlist_ra (ra)
+ (ra-mak (ra-get-type ra) (labsyms2syms (ra-get-value ra))))
+
+(DEFSUB abs2exp_ra (ra)
+ (ra-mak (ra-get-type ra) (labexp2exp (ra-get-value ra))))
+
+(DEFSUB abs2exps_ra (ra)
+ (ra-mak (ra-get-type ra) (labexps2exps (ra-get-value ra))))
+
+(DEFSUB abs2terms_ra (ra)
+ (ra-mak (ra-get-type ra) (abs2term_ra (ra-get-value ra))))
+
+(DEFLAM abs2term_ra (value)
+ (IF (MTL? value) MTL
+  (LCONS (abs2t_ra (CAR value)) (abs2term_ra (CDR value)))))
+
+(DEFSUB abs2t_ra (triple)
+ (LCONS (labexp2exp (CAR triple))
+	(LCONS (labexp2exp (CAR (CDR triple)))
+	       (LCONS (CAR (CDR (CDR triple))) MTL))))
+
+(DEFSUB abs2fact_ra (ra)
+ (ra-mak (ra-get-type ra) (mbid-mak (ra-get-value ra))))
+
+(DEFSUB abs2facts_ra (ra)
+ (ra-mak (ra-get-type ra) (abs2facts_ra-list (ra-get-value ra))))
+
+(DEFLAM abs2facts_ra-list (list)
+ (IF (MTL? list) MTL
+  (LCONS (mbid-mak (ra-get-value (FIRST list)))
+	 (abs2facts_ra-list (REST list)))))
+
+(DEFSUB abs2axiom_ra (ra)
+ (ra-mak (ra-get-type ra) (ra-get-value ra)))
+
+(DEFSUB abs2axiomschema_ra (ra)
+ (ra-mak (ra-get-type ra)
+	 (CONS (CAR (CDR ra))
+	       (abs2wtsubstrep_ra (CDR (CDR ra)))))) 
+
+(DEFLAM abs2wtsubstrep_ra (wtsubstrep)
+ (IF (MTL? wtsubstrep) MTL
+  (LCONS (abs2wtsubst_ra (CAR wtsubstrep))
+	 (abs2wtsubstrep_ra (CDR wtsubstrep)))))
+
+(DEFSUB abs2wtsubst_ra (wtsubst)
+ (LCONS (labexp2exp (CAR wtsubst))
+        (CONS (labexp2exp (CAR (CDR wtsubst)))
+              (labexp2exp (CDR (CDR wtsubst))))))
+
+(DEFSUB abs2substlist_ra (ra)
+ (ra-mak (ra-get-type ra) (abs2substlist (ra-get-value ra))))
+
+(DEFLAM abs2substlist (subst)
+ (IF (MTL? subst) MTL
+  (LCONS (CONS (labsym2sym (CAR (CAR subst)))
+	       (labsym2sym (CDR (CAR subst))))
+	 (abs2substlist (CDR subst)))))
+
+(DEFSUB abs2factand_ra (ra)
+ (ra-mak (ra-get-type ra)
+         (IF (NATNUM (ra-get-value ra)) (mbid-mak (ra-get-value ra))
+          (ra-get-value ra))))
+
+(DEFSUB abs2everyother_ra (ra) ra)
+
+;**********************************************************************
+;*                                                                    *
+;*      From an absra to a ra                                         *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM absra2ra (ra)
+ (IF (INDCONST_RA ra) (abs2indconst_ra ra)
+  (IF (VARORPARLIST_RA ra) (abs2varorparlist_ra ra)
+   (IF (OR (TERM_RA ra) (EXP_RA ra) (WFF_RA ra)) (abs2exp_ra ra)
+    (IF (TERMS+OCC_RA ra) (abs2terms_ra ra)
+     (IF (OR (TERMS_RA ra)(WFFS_RA ra)) (abs2exps_ra ra)
+      (IF (FACT_RA ra) (abs2fact_ra ra)
+       (IF (FACTS_RA ra) (abs2facts_ra ra)
+	(IF (AXIOM_RA ra) (abs2axiom_ra ra)
+	 (IF (AXIOMSCHEMA_RA ra) (abs2axiomschema_ra ra)
+	  (IF (SUBSTLIST_RA ra) (abs2substlist_ra ra)
+	   (IF (FACTAND_RA ra) (abs2factand_ra ra)
+	    (abs2everyother_ra ra)))))))))))))
+
+;**********************************************************************
+;*                                                                    *
+;*      From a ras to an absras and viceversa                         *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM ras2absras (ras)
+ (IF (MTL? ras) MTL
+  (LCONS (ra2absra (ras-get-first ras))(ras2absras (ras-get-rest ras)))))
+
+(DEFLAM absras2ras (ras)
+ (IF (MTL? ras) MTL
+  (LCONS (absra2ra (ras-get-first ras)) (absras2ras (ras-get-rest ras)))))
+
+;**********************************************************************
+;*                                                                    *
+;*     From a reason to an abstract reason and viceversa              *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB reason2absreason (reason)
+ (reason-mak (reason-get-rule reason) (ras2absras (reason-get-ras reason))))
+
+(DEFSUB absreason2reason (absreason)
+ (reason-mak (reason-get-rule absreason)
+	     (absras2ras (reason-get-ras absreason))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   (syms2rightsyms syms)                                            *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Transforming a list of symbols into a list of rightsymbols.      *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM syms2rightsyms (syms)
+ (IF (MTL? syms) MTL
+  (LCONS (sym2rightsym (CAR syms)) (syms2rightsyms (CDR syms)))))

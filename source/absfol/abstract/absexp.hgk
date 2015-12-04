@@ -1,0 +1,260 @@
+;*****************************************************************************
+;*                                                                           *
+;*                           absexp.hgk                                      *
+;*                                                                           *
+;*             The routines for handling abstract-expressions.               *
+;*                                                                           *
+;*                                                                           *
+;*                                                                           *
+;*  Internal rappresentation of ABSTRACT-EXPRESSIONS:                        *
+;*                                                                           *
+;*                                                                           *
+;*    abswff        ::= <WABSappl>    |                                      *
+;*                      ( <abswff> )  |                                      *
+;*                      <absconnappl> |                                      *
+;*                      <absquantwff> |                                      *
+;*                      <abswffif>    |                                      *
+;*                      <absawff>                                            *
+;*                                                                           *
+;*    WABSappl     ::=  (WABS <wff>)                                         *
+;*                                                                           *
+;*    absconnappl  ::=  (<sentconn> <abswff_1> ... <abswff_n>)               *
+;*                                                                           *
+;*    absquantwff  ::=  (<quant> <mapped-indvar> <abswff>)                   *
+;*                                                                           *
+;*    abswffif     ::=  (wffif <abswff>  <abswff> <abswff>)                  *
+;*                                                                           *
+;*    absawff      ::=  <abssentsym>  |                                      *
+;*                      <abspredappl> |                                      *
+;*                      <equabsappl>                                         *
+;*                                                                           *
+;*    abspredappl  ::=  (<mapped-predsym> <absterm_1> ... <absterm_n>)       *
+;*                                                                           *
+;*    equabsappl   ::=  (= <absterm> <absterm>)                              *
+;*                                                                           *
+;*                                                                           *
+;*    absterm      ::=  <TABSappl>    |                                      *
+;*                      (<absterm>)   |                                      *
+;*                      <absfunappl>  |                                      *
+;*                      <abstermif>   |                                      *
+;*                      <absindsym>                                          *
+;*                                                                           *
+;*    TABSappl     ::=  (TABS <term>)                                        *
+;*                                                                           *
+;*    abstermif    ::=  (trmif <abswff> <absterm> <absterm>)                 *
+;*                                                                           *
+;*    absfunappl   ::=  (<mapped-funsym> <absterm_1> ... <absterm_n>)        *
+;*                                                                           *
+;*                                                                           *
+;*                 "MAPPED SYMBOLS"                                          *
+;*                                                                           *
+;*    mapped-sentsym   ::=  SMAP[<sentsym>] | PSMAP[<predsym>]               *
+;*    mapped-predsym   ::=  PMAP[<predsym>]                                  *
+;*    mapped-funsym    ::=  FUMAP[<funsym>]                                  *
+;*    mapped-indsym    ::=  IMAP[<indsym>]  | FIMAP[<funsym>]                *
+;*                                                                           *
+;*    mapped-indvar    ::=  IMAP[<indvar>]                                   *
+;*                                                                           *
+;*****************************************************************************
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 1.  Some predicates about abs-expressions.                                *
+;*                                                                           *
+;*                                                                           *
+;*  In this section we can find some simple predicates describing various    *
+;*  kinds of abs-expressions.                                                *
+;*  Note that these predicates are only able to distinguish among various    *
+;*  kinds of abs-expressions, but in most cases they are not able to         *
+;*  recognize whether the object passed is an absexpression or not!          *
+;*  In order to use them, the programmer must be already sure that the       *
+;*  object passed is an abs-expression.                                      *
+;*                                                                           *
+;*                                                                           *
+;*  SYNTAX:                                                                  *
+;*     (ABSAWFF        ABSEXP)                                               *
+;*     (ABSPREDAPPL    ABSEXP)                                               *
+;*     (ABSQUANTWFF    ABSEXP)                                               *
+;*     (ABSTERMIF      ABSEXP)                                               *
+;*     (ABSEQU         ABSEXP)                                               *
+;*     (ABSWFFIF       ABSEXP)                                               *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*     ABSAWFF        Checks an absexp to be an atomic abswff.               *
+;*     ABSPREDAPPL    Checks an absexp to be an application of a             *
+;*                    predicate map or a predicate-to-sentence map.          *
+;*     ABSQUANTWFF    Checks an absexp to be a quantified abswff.            *
+;*     ABSTERMIF      Checks an absexp to be a conditional absterm.          *
+;*     ABSEQU         Checks an absexp to be an equality abswff.             *
+;*     ABSWFFIF       Checks an absexp to be a conditional abswff.           *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM ABSAWFF (ABSEXP)
+  (IF (SIMPLE ABSEXP) 
+   (OR (SMAP? ABSEXP)
+       (PSMAP? ABSEXP))
+   (OR (ABSPREDAPPL ABSEXP) 
+       (ABSEQU ABSEXP))))
+
+
+(DEFLAM ABSPREDAPPL (ABSEXP) 
+  (AND (APPL ABSEXP)
+       (OR (PMAP?  (appl-get-functor ABSEXP))
+           (PSMAP? (appl-get-functor ABSEXP)))))
+                          
+
+(DEFSUB ABSQUANTWFF (ABSEXP) 
+   (AND (APPL ABSEXP) (QUANT (appl-get-functor ABSEXP))))
+
+
+(DEFSUB ABSTERMIF (ABSEXP) (AND (IFEXP ABSEXP) (EQ (condof ABSEXP) Trmif)))
+
+
+(DEFSUB ABSEQU (ABSEXP) (AND (APPL ABSEXP)
+                             (EQ (appl-get-functor ABSEXP) Equality)))
+
+
+(DEFSUB ABSWFFIF (ABSEXP) (AND (IFEXP ABSEXP) (EQ (condof ABSEXP) Wffif)))
+
+;*****************************************************************************
+;*                                                                           *
+;* 2. Predicates and destructors for ABS-APPLICATIONs                        *
+;*                                                                           *
+;*  TABS-APPLICATION ::=  (TABS <term>)                                      *
+;*  WABS-APPLICATION ::=  (WABS <wff>)                                       *
+;*                                                                           *
+;*                                                                           *
+;*  SYNTAX:                                                                  *
+;*      (TABS_APPL?        absexp)                                           *
+;*      (WABS_APPL?        absexp)                                           *
+;*      (TABS_appl-get-exp absexp)                                           *
+;*      (WABS_appl-get-exp absexp)                                           *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*      TABS_APPL?         Is absexp in the form TABS(exp)?                  *
+;*      WABS_APPL?         Is absexp in the form WABS(exp)?                  *
+;*      TABS_appl-get-exp  Gets the internal exp from a TABS-application.    *
+;*      WABS_appl-get-exp  Gets the internal exp from a WABS-application.    *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFSUB TABS_APPL? (absexp)
+ (AND (APPL absexp) (EQUAL (label2sym 'TABS) (appl-get-functor absexp))))  
+
+
+(DEFSUB WABS_APPL? (absexp)
+ (AND (APPL absexp) (EQUAL (label2sym 'WABS) (appl-get-functor absexp))))  
+
+
+(DEFSUB TABS_appl-mak (term) (LIST (label2sym 'TABS) term))
+(DEFSUB WABS_appl-mak (wff)  (LIST (label2sym 'WABS) wff))
+
+
+(DEFSUB TABS_appl-get-exp (absexp) (SECOND absexp))
+(DEFSUB WABS_appl-get-exp (absexp) (SECOND absexp))
+
+
+;*****************************************************************************
+;*                                                                           *
+;*  3.  Some routines handling mapped-syms                                   *
+;*                                                                           *
+;*    This section includes all the routines to handle the "mapped symbols"  *
+;*    i.e. symbols written in the form  *MAP[<*sym>] (es. PMAP[movable]).    *
+;*                                                                           *
+;*                                                                           *
+;*    mapped-sentsym   ::=  SMAP[<sentsym>] | PSMAP[<predsym>]               *
+;*    mapped-predsym   ::=  PMAP[<predsym>]                                  *
+;*    mapped-funsym    ::=  FUMAP[<funsym>]                                  *
+;*    mapped-indsym    ::=  IMAP[<indsym>]  | FIMAP[<funsym>]                *
+;*    mapped-indvar    ::=  IMAP[<indvar>]                                   *
+;*                                                                           *
+;*                                                                           *
+;*                                                                           *
+;* SYNTAX:                                                                   *
+;*     (mapsym-mak  type sym)                                                *
+;*     (mapsym2sym  mapsym)                                                  *
+;*     (mapsym-get-lab  mapsym)                                              *
+;*     (mapsym-get-type mapsym)                                              *
+;*     (<MAPTYPE>? sym)                                                      *
+;*                                                                           *
+;* DESCRIPTION:                                                              *
+;*   mapsym-mak      Builds a mapped-symbol *MAP[<*sym>] using a map type    *
+;*                   *MAP and a symbol <*sym>.                               *
+;*                   (es. PMAP, `#:|movable|' ==> `PMAP[movable]').          *
+;*   mapsym2sym      Given a generical mapped-symbol in the form             *
+;*                   *MAP[<*sym>] (es.`PMAP[movable]'), returns its own      *
+;*                   <*sym> (es. `#:|movable|').                             *
+;*   mapsym-get-lab      Given a generical mapped-symbol in the form         *
+;*                   *MAP[<*sym>] (es.`PMAP[movable]'), returns the label    *
+;*                   of ifs own <*sym> (es. `|movable|').                    *
+;*   mapsym-get-type     Given a generical mapped-symbol in the form         *
+;*                   *MAP[<*sym>] (es.`PMAP[movable]'), returns its map type *
+;*                   *MAP (es. `PMAP').                                      *
+;*   <MAPTYPE>?      Each predicate recognizes a particular mapped-symbol    *
+;*                   in the form *MAP[<sym>].                                *
+;*                                                                           *
+;*****************************************************************************
+
+
+
+(DEFLAM mapsym-mak (type sym)
+ (CONCAT-SYMS
+  (CONCAT-SYMS type '[)
+  (CONCAT-SYMS sym '])))
+
+
+(DEFSUB mapsym2sym (mapsym)          
+ (label2sym (mapsym-get-lab mapsym)))
+
+
+
+(DEFLAM mapsym-get-lab (mapsym)
+ (LET ((chrsym (SYM2CHR mapsym)))
+  (IF (EQUAL (HGKM-NTH 5 chrsym) (CAR (SYM2CHR '[)))
+   (CHR2SYM (SUBTRACT (SUFLIST chrsym 5)
+                      (SYM2CHR '])))
+   (IF (EQUAL (HGKM-NTH 6 chrsym) (CAR (SYM2CHR '[)))
+    (CHR2SYM (SUBTRACT (SUFLIST chrsym 6)
+                       (SYM2CHR '])))
+    MTL))))
+
+
+(DEFLAM mapsym-get-type (mapsym)
+ (LET ((chrsym (SYM2CHR mapsym)))
+  (IF (EQUAL (HGKM-NTH 5 chrsym) (CAR (SYM2CHR '[)))
+   (CHR2SYM (PRELIST chrsym 4))
+   (IF (EQUAL (HGKM-NTH 6 chrsym) (CAR (SYM2CHR '[))) 
+    (CHR2SYM (PRELIST chrsym 5))
+    MTL))))    
+
+
+
+
+(DEFSUB IMAP?  (sym) (EQUAL   (mapsym-get-type sym) 'IMAP ))
+(DEFSUB SMAP?  (sym) (EQUAL   (mapsym-get-type sym) 'SMAP ))
+(DEFSUB FUMAP? (sym) (EQUAL   (mapsym-get-type sym) 'FUMAP ))
+(DEFSUB PMAP?  (sym) (EQUAL   (mapsym-get-type sym) 'PMAP ))
+
+(DEFSUB FIMAP?  (sym) (EQUAL  (mapsym-get-type sym) 'FIMAP ))
+(DEFSUB PSMAP?  (sym) (EQUAL  (mapsym-get-type sym) 'PSMAP ))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

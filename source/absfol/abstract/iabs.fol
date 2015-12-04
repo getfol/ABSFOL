@@ -1,0 +1,139 @@
+;*****************************************************************************
+;*                                                                           *
+;*  iabs.fol   -  INITIALIZATION FOR ABSTRACTION'S CODE                      *
+;*                                                                           *
+;*****************************************************************************
+
+
+
+;*****************************************************************************
+;*   0  Initialization of all the abstraction commands.                      *
+;*****************************************************************************
+
+(WABS&TABS-create)
+(absvars&pars$-create&add)
+
+(abstraction_opts-ini)
+(abstract_opts-ini)
+
+(abslist-reset)
+(abstypelist-reset)
+(abstype_lib-load)
+
+
+;*****************************************************************************
+;*   1  Definitions of all the abstraction commands                          *
+;*****************************************************************************
+
+; the `abstraction' commands family (declaration of abstractions)
+(mknewcommand (QUOTE ABSTRACTION) (QUOTE FOL) (QUOTE ABSTRACTION)
+              (QUOTE ABSTRACTION#)  MTL)
+
+; the `abstract' commands family (application of abstractions)
+(mknewcommand (QUOTE ABSTRACT) (QUOTE FOL) (QUOTE ABSTRACTION)
+              (QUOTE ABSTRACT#)  MTL)
+
+; the `delete' commands family (deletion  of abstractions)
+(mknewcommand (QUOTE DELABSTRACTION) (QUOTE FOL) (QUOTE ABSTRACTION)
+              (QUOTE DELABSTRACTION#)  MTL)
+(mknewcommand (QUOTE DELABS) (QUOTE FOL) (QUOTE ABSTRACTION)
+              (QUOTE DELABSTRACTION#)  MTL)
+(mknewcommand (QUOTE DELABSTRACTIONS) (QUOTE FOL)(QUOTE ABSTRACTION)
+              (QUOTE DELABSTRACTIONS#) MTL)
+(mknewcommand (QUOTE DELABSS) (QUOTE FOL) (QUOTE ABSTRACTION)
+              (QUOTE DELABSTRACTIONS#)  MTL)
+
+; the abstraction utility commands
+(mknewcommand (QUOTE ABSTERM) (QUOTE FOL) (QUOTE ABSTRACTION)
+              (QUOTE ABSTERMCMD#) FALSE)
+(mknewcommand (QUOTE ABSAWFF) (QUOTE FOL) (QUOTE ABSTRACTION)
+              (QUOTE ABSAWFFCMD#) FALSE)
+(mknewcommand (QUOTE ABSWFF) (QUOTE FOL) (QUOTE ABSTRACTION)
+              (QUOTE ABSWFFCMD#) FALSE)
+
+
+;*****************************************************************************
+;*   1.1   initialization of the `abstraction' options list.                 *
+;*         `abstraction' has the following options:                          *
+;*****************************************************************************
+(mknewabstractiontoken (QUOTE DECLARE) (QUOTE ABSDECLARE#))
+(mknewabstractiontoken (QUOTE PROTOTYPE) (QUOTE ABSTYPE#))
+(mknewabstractiontoken (QUOTE INSTANTIATE) (QUOTE ABSINSTANTIATE#))
+
+
+;*****************************************************************************
+;*   1.2    initialization of the `abstract' options list.                   *
+;*          the following objects can be abstracted:                         *
+;*****************************************************************************
+; EXPRESSIONS:
+(mknewabstracttoken (QUOTE TERM) (QUOTE TERM-ABSTRACT#))
+(mknewabstracttoken (QUOTE WFF) (QUOTE WFF-ABSTRACT#))
+
+; FACTS:
+(mknewabstracttoken (QUOTE AXIOM) (QUOTE AXIOM-ABSTRACT#))
+(mknewabstracttoken (QUOTE THEORY) (QUOTE THEORY-ABSTRACT#))
+
+(mknewabstracttoken (QUOTE THEOREM) (QUOTE THEOREM-ABSTRACT#))
+
+; SYMBOLS:
+(mknewabstracttoken (QUOTE SENTCONST) (QUOTE SENTCONST-ABSTRACT#))
+(mknewabstracttoken (QUOTE SENTPAR) (QUOTE SENTPAR-ABSTRACT#))
+
+(mknewabstracttoken (QUOTE PREDCONST) (QUOTE PREDCONST-ABSTRACT#))
+(mknewabstracttoken (QUOTE PREDPAR) (QUOTE PREDPAR-ABSTRACT#))
+
+(mknewabstracttoken (QUOTE FUNCONST) (QUOTE FUNCONST-ABSTRACT#))
+(mknewabstracttoken (QUOTE FUNPAR) (QUOTE FUNPAR-ABSTRACT#))
+
+(mknewabstracttoken (QUOTE INDCONST) (QUOTE INDCONST-ABSTRACT#))
+(mknewabstracttoken (QUOTE INDPAR) (QUOTE INDPAR-ABSTRACT#))
+(mknewabstracttoken (QUOTE INDVAR) (QUOTE INDVAR-ABSTRACT#))
+
+; WHOLE GROUPS OF SYMBOLS:
+(mknewabstracttoken (QUOTE ALPHABET) (QUOTE ALLSYMS-ABSTRACT#))
+
+(mknewabstracttoken (QUOTE SENTSYMS) (QUOTE SENTSYMS-ABSTRACT#))
+(mknewabstracttoken (QUOTE INDSYMS) (QUOTE INDSYMS-ABSTRACT#))
+(mknewabstracttoken (QUOTE PREDSYMS) (QUOTE PREDSYMS-ABSTRACT#))
+(mknewabstracttoken (QUOTE FUNSYMS) (QUOTE FUNSYMS-ABSTRACT#))
+
+(mknewabstracttoken (QUOTE SENTCONSTS) (QUOTE SENTCONSTS-ABSTRACT#))
+(mknewabstracttoken (QUOTE SENTPARS) (QUOTE SENTPARS-ABSTRACT#))
+
+(mknewabstracttoken (QUOTE INDCONSTS) (QUOTE INDCONSTS-ABSTRACT#))
+(mknewabstracttoken (QUOTE INDPARS) (QUOTE INDPARS-ABSTRACT#))
+(mknewabstracttoken (QUOTE INDVARS) (QUOTE INDVARS-ABSTRACT#))
+
+(mknewabstracttoken (QUOTE PREDCONSTS) (QUOTE PREDCONSTS-ABSTRACT#))
+(mknewabstracttoken (QUOTE PREDPARS) (QUOTE PREDPARS-ABSTRACT#))
+
+(mknewabstracttoken (QUOTE FUNCONSTS) (QUOTE FUNCONSTS-ABSTRCT#))
+(mknewabstracttoken (QUOTE FUNPARS) (QUOTE FUNPARS-ABSTRACT#))
+
+
+;*****************************************************************************
+;*   2      initialization of the `abstraction' SHOW  list.                  *
+;*****************************************************************************
+
+
+(mknewshowtoken (QUOTE ABSTRACTION) (QUOTE SHOWABSTRACTION#)
+                (QUOTE ABSTRACTION))
+(mknewshowtoken (QUOTE ABSTRACTIONS) (QUOTE SHOWABSTRACTIONS#)
+                (QUOTE ABSTRACTION))
+
+(mknewshowtoken (QUOTE ABSTYPE) (QUOTE SHOWABSTYPE#)
+                (QUOTE ABSTRACTION))
+(mknewshowtoken (QUOTE ABSTYPES) (QUOTE SHOWABSTYPES#)
+                (QUOTE ABSTRACTION))
+
+(mknewshowtoken (QUOTE ABSTRACT) (QUOTE SHOWABSOPT#)
+                (QUOTE ABSTRACTION))
+
+
+
+
+
+
+
+
+

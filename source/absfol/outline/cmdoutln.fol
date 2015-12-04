@@ -1,0 +1,138 @@
+;**********************************************************************
+;*                                                                    *
+;*  This file contains all the routines for building outline steps    *
+;*  which are not natural deduction inference rules.                  *
+;*                                                                    *
+;**********************************************************************
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: TRYCANCEL                                                *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   TRYCANCEL REP{ <id> } ;                                          *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Cancels from the current outline the tries specified.            *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM TRYCANCEL# ()
+ (LET ((labellist (IDREP#)))
+  (SEQ
+   (ENDL)
+   (outline-del-tries labellist))))
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: NAMEOUTLINE                                              *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   NAMEOUTLINE <folsym> ;                                           *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Needed to make an outline name and name the current outline.     *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM NAMEOL# ()
+ (LET ((OLNAME (FOLSYM# "NAMEOUTLINE")))
+  (IF (OUTLINE-UNNAMED? OLNAME)
+   (GERRM0 OLNAME " is the name of the unnamed outline.")
+   (IF (OUTLINE-NAME? OLNAME)
+    (GERRM0 OLNAME " is already an outline name.")
+    (IFN (CUROUTLINE-UNNAMED?)
+     (PRINTMES "The current outline is already named")
+     (SEQ
+      (ENDL)
+      (ollist-set-outline (outline-mak-empty OLNAME))
+      (curolname-set OLNAME)
+      (PRINTMES2 "You have named the current outline: " OLNAME)))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: MAKEOUTLINE                                              *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   MAKEOUTLINE <folsym> ;                                           *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Needed to make an outline name and an empty outline.             *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM MAKEOL# ()
+ (LET ((OLNAME (FOLSYM# "MAKEOUTLINE")))
+  (IF (OUTLINE-UNNAMED? OLNAME)
+   (GERRM0 OLNAME " is the name of the unnamed outline.")
+   (IF (OUTLINE-NAME? OLNAME)
+    (GERRM0 OLNAME " is already an outline name.")
+    (SEQ
+     (ENDL)
+     (ollist-set-outline (outline-mak-empty OLNAME))
+     (PRINTMES2 "You have created the empty outline: " OLNAME))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: COPYOUTLINE                                              *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   COPYOUTLINE <folsym> ;                                           *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Needed to copy the current outline.                              *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM COPYOL# ()
+ (LET ((OLNAME (FOLSYM# "COPYOUTLINE")))
+  (IF (OUTLINE-UNNAMED? OLNAME)
+   (GERRM0 OLNAME " is the name of the unnamed outline.")
+   (IF (OUTLINE-NAME? OLNAME)
+    (GERRM0 OLNAME " is already an outline name.")
+    (SEQ
+     (ENDL)
+     (cur-outline-copy OLNAME)
+     (PRINTMES2 "You have copied the current outline in the outline: "
+		OLNAME))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: SWITCHOUTLINE                                            *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   SWITCHOUTLINE <folsym> ;                                         *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Needed to switches the current outline to another outline.       *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM SWITCHOL# ()
+ (IF (CUROUTLINE-UNNAMED?)
+  (FERRM0 "The current outline has to be named before switching outline")
+  (LET ((OLNAME (OLNAME#)))
+   (IF (CUROUTLINE-NAME? OLNAME)
+    (PRINTMES "You are already there: current state not saved.")
+    (SEQ
+     (ENDL)
+     (outline-switch OLNAME)
+     (PRINTMES2 "You are now using the outline: " OLNAME))))))
+
+;**********************************************************************
+;*                                                                    *
+;*  COMMAND: RESETOUTLINE                                             *
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   RESETOUTLINE ;                                                   *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   Forgives the current outline.                                    *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM RESETOL# ()
+ (SEQ
+  (ENDL)
+  (PRINTMES "Forgetting all the steps of the current outline")
+  (cur-outline-forget)))

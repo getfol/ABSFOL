@@ -1,0 +1,144 @@
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   <sympair>  ::= < <sym> . <sym> >                                 *
+;*   <wffpair>  ::= < <wff> . <wff> >                                 *
+;*   <termpair> ::= < <term> . <term> >                               *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB sympair-mak (left right) (CONS left right))
+(DEFSUB sympair-get-lsym (sympair) (CAR sympair))
+(DEFSUB sympair-get-rsym (sympair) (CDR sympair))
+
+(DEFSUB wffpair-mak (left right) (CONS left right))
+(DEFSUB wffpair-get-lwff (wffpair) (CAR wffpair))
+(DEFSUB wffpair-get-rwff (wffpair) (CDR wffpair))
+
+(DEFSUB termpair-mak (left right) (CONS left right))
+(DEFSUB termpair-get-lterm (termpair) (CAR termpair))
+(DEFSUB termpair-get-rterm (termpair) (CDR termpair))
+
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX                                                            *
+;*   (exp-rewrite-sym       exp sympair occlist)                      *
+;*   (explist-rewrite-sym   explist sympair occlist)                  *
+;*                                                                    *
+;*  DESCRIPTION                                                       *
+;*   exp-rewrite-sym rewrites the occurences (specified in            *
+;*   occslist) of left-sym with right-sym into exp.                   *
+;*   explist-rewrite-sym works with a list of exps.                   *
+;*                                                                    *
+;*  ALGORITHM                                                         *
+;*                   exp-rewrite-sym                                  *
+;*                         |                                          *
+;*                      SIMPLE exp                                    *
+;*                        /\                                          *
+;*                       /  \                                         *
+;*                      /    \                                        *
+;*           sym-rewrite     appl-mak                                 *
+;*                               sym-rewrite          functor         *
+;*                               explist-rewrite-sym  args            *
+;*                                                                    *
+;*  NOTES                                                             *
+;*   These routines use a global variable (OCCS). The caller must     *
+;*   intialise this variable before calling rewriting routines.       *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB exp-rewrite-sym (exp sympair occlist)
+ (IF (SIMPLE exp) (sym-rewrite exp sympair occlist)
+  (appl-mak
+   (sym-rewrite (appl-get-functor exp) sympair occlist)
+   (explist-rewrite-sym (appl-get-args exp) sympair occlist))))
+
+(DEFLAM explist-rewrite-sym (explist sympair occlist)
+ (IF (MTL? explist) MTL
+  (LCONS (exp-rewrite-sym (FIRST explist) sympair occlist)
+	 (explist-rewrite-sym (REST explist) sympair occlist))))
+
+(DEFSUB sym-rewrite (sym sympair occlist)
+ (IFN (EQUAL sym (sympair-get-lsym sympair)) sym
+  (SEQ
+   (occs-gotit)
+   (IFN (occs-good?) sym
+    (sympair-get-rsym sympair)))))
+
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX                                                            *
+;*   (exp-rewrite-wff exp wffpair occlist)                            *
+;*   (explist-rewrite-wff explist wffpair occlist)                    *
+;*                                                                    *
+;*  DESCRIPTION                                                       *
+;*   trivial behaviour...                                             *
+;*                                                                    *
+;*  ALGORITHM                                                         *
+;*                     exp-rewrite-wff                                *
+;*                           |                                        *
+;*                        SIMPLE wff                                  *
+;*                           /\                                       *
+;*                          /  \                                      *
+;*                         /    \                                     *
+;*                    MATCH      MATCH                                *
+;*                     /\          /\                                 *
+;*          exp-replace   exp     /  \                                *
+;*                               /    \                               *
+;*                    exp-replace      applmak                        *
+;*                                         appl-get-functor exp       *
+;*                                         explist-rewrite args       *
+;*                                                                    *
+;*  NOTES                                                             *
+;*   The algorithm is slightly different from the one given for       *
+;*   symbols.  This algorithm works with the assumption that it       *
+;*   doesn't exist a wff that is a subwff of itself: that is,         *
+;*   everytime a valid substitution is found, the algorithm           *
+;*   terminates.                                                      *
+;*   The caller must initialise the global variable OCCS.             *
+;*                                                                    *
+;**********************************************************************
+
+(DEFSUB exp-rewrite-wff (exp wffpair occlist)
+ (substexp+occ
+  (wffpair-get-lwff wffpair)
+  (wffpair-get-rwff wffpair)
+  exp
+  occlist))
+
+(DEFLAM explist-rewrite-wff (explist wffpair occlist)
+ (IF (MTL? explist) MTL
+  (LCONS (exp-rewrite-wff (FIRST explist) wffpair occlist)
+	 (exp-rewrite-wff (REST explist) wffpair occlist))))
+
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX                                                            *
+;*   (wff-rewrite-sym wff sympair occlist)                            *
+;*   (wff-rewrite-wff wff wffpair occlist)                            *
+;*                                                                    *
+;*  DESCRIPTION                                                       *
+;*   These routines add a test to check wheter the expression         *
+;*   resulting from the rewriting is a well formed.                   *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM wff-rewrite-sym (wff sympair occlist abstraction)
+ (LET ((rewexp (exp-rewrite-sym wff sympair occlist)))
+  (LET ((newabs (exp-abstract rewexp abstraction)))
+   (LET ((oldabs (exp-abstract wff abstraction)))
+    (IF (WFF-REC rewexp)
+     (IF (EQUALEXP newabs oldabs) rewexp
+      (PRINTMES "The instantiation is not correct."))
+     (PRINTMES "The rewritten <exp> is not a wff: no changes"))))))
+
+(DEFLAM wff-rewrite-wff (wff wffpair occlist abstraction)
+ (LET ((rewexp (exp-rewrite-wff wff wffpair occlist)))
+  (LET ((newabs (exp-abstract rewexp abstraction))
+	(oldabs (exp-abstract wff abstraction)))
+   (IF (WFF-REC rewexp)
+    (IF (EQUAL oldabs newabs) rewexp
+     (PRINTMES "The instantiation is not correct"))
+    (PRINTMES "The rewritten <exp> is not a wff: no changes")))))

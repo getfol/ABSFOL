@@ -1,0 +1,626 @@
+;*****************************************************************************
+;*                                                                           *
+;*   declabs.rp    PARSING AND PRINTING OF ABSTRACTIONS                      *
+;*                                                                           *
+;*   This file includes all the routines to parse and print all the objects  *
+;*   included in one abstraction and abstraction prototype, except for       *
+;*   `rightsyms' and `abstract expression', to which two specific files      *
+;*   are devoted (rightsym.rp and absexp.rp).                                *
+;*                                                                           *
+;*   This file  is divided in two main sections:                             *
+;*   1 - The parsing of abstractions & abstypes                              *
+;*   2 - The printing of abstractions & abstypes                             *
+;*                                                                           *
+;*****************************************************************************
+
+
+;*****************************************************************************
+;*                                                                           *
+;*  1 - The parsing of abstractions & abstypes                               *
+;*                                                                           *
+;*****************************************************************************
+
+;*****************************************************************************
+;*                                                                           *
+;*  1.1 - Routines for parsing all the abstractions' elements                *
+;*                                                                           *
+;*                                                                           *
+;*  SINTAX :                                                                 *
+;*                                                                           *
+;*  ABSTRACTION DECLARE  <new abstraction name>                              *
+;*  ground <ground context name>                                             *
+;*  abstract <abstract context name>                                         *
+;*  OPT [PI|TI|PD|TD|PC|TC]                                                  *
+;*  flambda                                                                  *
+;*      maps                                                                 *
+;*          inds    OPT [ : <list of individual map-pairs>   ]               *
+;*          sents   OPT [ : <list of sentence map-pairs>     ]               *
+;*          funs    OPT [ : <list of function map-pairs>     ]               *
+;*          preds   OPT [ : <list of predicate map-pairs>    ]               *
+;*      rules                                                                *
+;*          <list of absrules>                                               *
+;*  OPT [fomega lambdaomega]                                                 *
+;*  OPT [fdelta lambdadelta];                                                *
+;*                                                                           *
+;*                                                                           *
+;*                                                                           *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*                                                                           *
+;*      NEWABSNAME#    Parses the name of a not yet declared abstraction.    *
+;*      ABSNAME#       Parses the name of an already declared abstraction.   *
+;*      GNDCTX#        Parses the name of the ground context.                *
+;*      ABSCTX#        Parses the name of the abstract context.              *
+;*                     If it doesn't exist yet, it is created empty.         *
+;*      ABSKIND@       Parses optionally the abskind, i.e. the information   *
+;*                     by which the user attributes some property            *
+;*                     (TI-ness etc.) to the declared abstraction.           *
+;*      FLAMBDA#       Parses the language map.                              *
+;*      PARTIALFLAMBDA# Parses the partial language map (in an abstype       *
+;*                      instantiation).                                      *
+;*      FOMEGA@        Parses optionally the axiom map.                      *
+;*      FDELTA@        Parses optionally the inference rule map.             *
+;*                                                                           *
+;*****************************************************************************
+
+
+
+(DEFLAM NEWABSNAME# () 
+ (LET ((absname (FOLSYM# "The parser")))
+  (IF (ABS-NAME? absname)
+   (ERRMESS3 "`" absname "' is already a name of an abstraction.")
+   absname)))  
+
+
+(DEFLAM ABSNAME# () 
+ (LET ((absname (FOLSYM# "The parser")))
+  (IFN (ABS-NAME? absname)
+   (ERRMESS3 "`" absname "' is not a name of an abstraction.")
+   absname)))  
+
+
+(DEFLAM GNDCTX# ()
+ (IF (CURCTEXT-UNNAMED?)
+  (FERRM0 "You must name the current context.")
+  (SEQ
+   (TKC# 'GROUND "`ground'")
+   (LET ((gndctx (CNAME#)))
+    (IFN (EQ gndctx (curcname-get))
+     (FERRM0 "You must use the current context as the ground one.")
+     gndctx)))))
+
+
+(DEFLAM ABSCTX# ()
+ (SEQ
+  (TKC# 'ABSTRACT "`abstract'")
+  (LET ((absctx (CNAME@)))
+   (IFN (IST absctx)
+    (LET ((newabsctx (FOLSYM# "The parser")))
+     (SEQ
+      (clist-set-ctext (ctext-mak-empty newabsctx))
+      (PRINTMES3 "You have created the new empty abstract context `"
+                 newabsctx "'.")
+      newabsctx))
+    absctx))))
+
+
+(DEFLAM ABSKIND@ ()
+ (LET ((S (SCANSTATUS-GET)))
+  (LET ((abskind MTL))
+   (IF (TKC@ 'PI) (PI-add-abskind abskind)
+   (IF (TKC@ 'TI) (TI-add-abskind abskind)
+   (IF (TKC@ 'PD) (PD-add-abskind abskind)
+   (IF (TKC@ 'TD) (TD-add-abskind abskind)
+   (IF (TKC@ 'PC) (PC-add-abskind abskind)
+   (IF (TKC@ 'TC) (TC-add-abskind abskind)
+   (SEQ
+    (SCANSTATUS-RESTORE S)    
+    abskind))))))))))
+
+
+
+(DEFLAM FLAMBDA# ()
+ (SEQ
+  (TKC# 'FLAMBDA "`FLAMBDA'")
+  (TKC# 'MAPS "`MAPS'")
+  (LET ((absmaps (ABSMAPS#)))
+   (SEQ
+    (TKC# 'RULES "`RULES'")
+    (LET ((absrules (ABSRULES#)))
+     (flambda-mak absmaps absrules))))))
+
+
+(DEFLAM PARTIALFLAMBDA# ()
+ (SEQ
+  (TKC# 'FLAMBDA "`flambda'")
+  (TKC# 'MAPS "`maps'")
+  (LET ((absmaps (ABSMAPS#)))
+   (IFN (TKC@ 'NEWRULES)
+    (flambda-mak absmaps (emptyabsrules))
+    (LET ((newabsrules (ABSRULES#)))
+     (flambda-mak absmaps newabsrules))))))
+
+
+(DEFLAM FOMEGA@ ()
+ (LET ((S (SCANSTATUS-GET)))
+  (IFN (TKC@ 'FOMEGA)
+   (SEQ
+    (SCANSTATUS-RESTORE S)
+    FVAL)
+   (TKC# 'LAMBDAOMEGA "LAMBDAOMEGA"))))
+
+
+(DEFLAM FDELTA@ ()
+ (LET ((S (SCANSTATUS-GET)))
+  (IFN (TKC@ 'FDELTA)
+   (SEQ
+    (SCANSTATUS-RESTORE S)
+    FVAL)
+   (TKC# 'LAMBDADELTA "LAMBDADELTA"))))
+
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;*  1.1.1 - parsing of absmaps                                               *
+;*                                                                           *
+;*  This section includes all the routines for alphabet maps' parsing        *
+;*                                                                           *
+;*  An <absmap> is a list of specific <map-pairs>.                           *
+;*  There are 4 absmaps:                                                     *
+;*   individual, sentence, function and predicate.                           *
+;*                                                                           *
+;*  A <map-pair> is a pair of a ground symbol and an abstract one,           *
+;*  plus some optional information.                                          *
+;*  Such sintax allows the user to map a predicate [function] into a         *
+;*  sentence [individual], i.e. to conceive a sentence [individual] as       *
+;*  a predicate [function] of arity 0.                                       *
+;*                                                                           *
+;*                                                                           *
+;*  SYNTAX :                                                                 *
+;*                                                                           *
+;*  individual map-pair ::=                                                  *
+;*    <indsym> -> <rightindsym>                                              *
+;*                                                                           *
+;*  sentence map-pair ::=                                                    *
+;*    <sentsym> -> <rightsentsym>                                            *
+;*                                                                           *
+;*  function map-pair ::=                                                    *
+;*    <funsym> -> <rightfunsym>                                              *
+;*                 OPT [ARITY <natnum> ]                                     *
+;*                 OPT [<bpinfo>]                                            *
+;*    <funsym> -> <rightindsym> ind                                          *
+;*                                                                           *
+;*  predicate map-pair ::=                                                   *
+;*    <predsym> -> <rightpredsym>                                            *
+;*                  OPT [ARITY <natnum>]                                     *
+;*                  OPT [<bpinfo>]                                           *
+;*    <predsym> -> <rightsentsym> sent                                       *
+;*                                                                           *
+;*                                                                           *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*                                                                           *
+;*     ABSMAPS#           Parses all absmaps.                                *
+;*     <ABSMAP>#          Each parses its specific absmap.                   *
+;*     <SYNTYPE>MAPPAIR@  Each parses optionally its specific kind of        *
+;*                        map-pair.                                          *
+;*     <SYNTYPE>MAPPAIR#  Each parses its specific kind of map-pair.         *
+;*     ARROW@             Parses optionally the arrow symbol `->'.           *
+;*     ARROW#             Parses the arrow symbol `->'.                      *
+;*                                                                           *
+;*****************************************************************************
+
+
+
+
+(DEFLAM ABSMAPS# () 
+ (LET ((imap (ABSIMAP#)))
+  (LET ((smap (ABSSMAP#)))
+   (LET ((fumap (ABSFUMAP#)))
+    (LET ((pmap (ABSPMAP#)))
+       (absmaps-mak imap smap fumap pmap))))))
+
+
+
+(DEFLAM ABSIMAP# () 
+ (SEQ 
+   (TKC# 'INDS "inds")
+   (IFN (IST (TK@ COLON)) FVAL 
+    (LISTSCAN# 'IMAPPAIR# 'IMAPPAIR@ "An <individual map-pair>" 
+                                     "<individual map-pair>"))))  
+(DEFLAM ABSSMAP# () 
+ (SEQ 
+   (TKC# 'SENTS "sents")
+   (IFN (IST (TK@ COLON)) FVAL 
+    (LISTSCAN# 'SMAPPAIR# 'SMAPPAIR@ "A <sentence map-pair>"  
+                                     "<sentence map-pair>"))))  
+(DEFLAM ABSFUMAP# () 
+ (SEQ 
+   (TKC# 'FUNS "funs")
+   (IFN (IST (TK@ COLON)) FVAL 
+    (LISTSCAN# 'FUMAPPAIR# 'FUMAPPAIR@ "A <function map-pair>"  
+                                       "<function map-pair>"))))  
+(DEFLAM ABSPMAP# () 
+ (SEQ 
+   (TKC# 'PREDS "preds")
+   (IFN (IST (TK@ COLON)) FVAL 
+    (LISTSCAN# 'PMAPPAIR# 'PMAPPAIR@ "A <predicate map-pair>"  
+                                     "<predicate map-pair>"))))  
+
+
+
+(DEFLAM IMAPPAIR@  () 
+ (LET ((leftsym (INDSYM@)))
+  (IFN (IST leftsym) FVAL
+   (SEQ 
+    (ARROW#) 
+    (LET ((rightsym (RIGHTIND# leftsym)))
+     (mappair-mak leftsym rightsym))))))
+    
+
+(DEFLAM SMAPPAIR@  () 
+ (LET ((leftsym (SENTSYM@)))
+  (IFN (IST leftsym) FVAL
+   (SEQ 
+    (ARROW#) 
+    (LET ((rightsym (RIGHTSENT# leftsym)))
+     (mappair-mak leftsym rightsym))))))
+    
+
+(DEFLAM FUMAPPAIR@  () 
+ (LET ((leftsym (FUNSYM@)))
+  (IFN (IST leftsym) FVAL
+   (SEQ 
+    (ARROW#) 
+    (LET ((rightsym (RIGHTFUN# leftsym)))
+     (mappair-mak leftsym rightsym))))))
+
+
+(DEFLAM PMAPPAIR@  () 
+ (LET ((leftsym (PREDSYM@)))
+  (IFN (IST leftsym) FVAL
+   (SEQ 
+    (ARROW#) 
+    (LET ((rightsym (RIGHTPRED#  leftsym)))
+     (mappair-mak leftsym rightsym))))))
+    
+
+
+(DEFLAM IMAPPAIR#  () 
+    (REQ# (QUOTE IMAPPAIR@)  "The parser" "an <individual map-pair>"))
+
+(DEFLAM SMAPPAIR#  () 
+    (REQ# (QUOTE SMAPPAIR@)  "The parser" "a <sentence map-pair>"))
+
+(DEFLAM FUMAPPAIR# () 
+    (REQ# (QUOTE FUMAPPAIR@) "The parser" "a <function map-pair>"))
+
+(DEFLAM PMAPPAIR#  () 
+    (REQ# (QUOTE PMAPPAIR@)  "The parser" "a <predicate map-pair>"))
+
+
+
+
+(DEFLAM ARROW@ () 
+ (IFN (IST (TK@ '-)) FVAL
+  (TK@ '>)))
+
+(DEFLAM ARROW# () (REQ# (QUOTE ARROW@) "A map" "an arrow `->'"))
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;*  1.1.2 - parsing of rules                                                 *
+;*                                                                           *
+;*  This section includes all the routines for rules' parsing                *
+;*                                                                           *
+;*                                                                           *
+;*                                                                           *
+;*  SYNTAX :                                                                 *
+;*                                                                           *
+;*    TABS(<term>) := <abs-term>                                             *
+;*    WABS(<wff>)  := <abs-wff>                                              *
+;*                                                                           *
+;*  EXAMPLE:                                                                 *
+;*                                                                           *
+;*    TABS(f(x))    := FUMAP[f](TABS(x))                                     *
+;*    WABS(A and B) := WABS(A) and WABS(B)                                   *
+;*                                                                           *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*                                                                           *
+;*     ABSRULES#     Parses a list of rules generating the corresponding     *
+;*                   absrules structure.                                     *
+;*     ABSRULE@      Parses an absrule optionally.                           *
+;*     ABSRULE#      Parses an absrule.                                      *
+;*     TERMABSRULE@  Parses a term-absrule optionally.                       *
+;*     WFFABSRULE@   Parses a wff-absrule optionally.                        *
+;*     ASSIGN@       Parses optionally the assignation symbol `:='.          *
+;*     ASSIGN#       Parses the assignation symbol `:='.                     *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM ABSRULES# ()
+ (LET ((rules (LISTSCAN# 'ABSRULE# 'ABSRULE@ "A <rule>" "<rule>")))
+  (absrules-mak rules)))
+
+
+;parses a rule optionally
+(DEFLAM ABSRULE@ ()
+ (LET ((termabsrule (TERMABSRULE@)))
+  (IF (IST termabsrule) 
+   termabsrule
+   (WFFABSRULE@))))
+   
+
+(DEFLAM TERMABSRULE@ () 
+ (IFN (IST (TKC@ 'TABS)) 
+  FVAL
+  (SEQ
+   (TKC# LPAR "a left parenthesys")
+   (LET ((term (TERM#)))
+    (SEQ
+     (TKC# RPAR "a right parenthesys")
+     (ASSIGN#)
+     (LET ((absterm (ABSTERM#))) 
+      (absrule-mak term absterm))))))) 
+
+
+(DEFLAM WFFABSRULE@ () 
+ (IFN (IST (TKC@ 'WABS)) 
+  FVAL
+  (SEQ
+   (TKC# LPAR "a left parenthesys")
+   (LET ((wff (WFF#)))
+    (SEQ
+     (TKC# RPAR "a right parenthesys")
+     (ASSIGN#)
+     (LET ((abswff (ABSWFF#))) 
+      (absrule-mak wff abswff))))))) 
+
+
+(DEFLAM ASSIGN@ () 
+ (LET ((status (SCANSTATUS-GET)))
+   (IFN (TK@ '\: )
+    (SEQ
+     (SCANSTATUS-RESTORE status)
+     FVAL)
+    (IFN (TK@ '\= )
+     (SEQ
+      (SCANSTATUS-RESTORE status)
+      FVAL)
+     (CHR2SYM (LIST 58 60))))))
+
+
+(DEFLAM ABSRULE# ()
+  (REQ# (QUOTE ABSRULE@) "The parser" "an <absrule>"))
+
+
+(DEFLAM ASSIGN# ()
+  (REQ# (QUOTE ASSIGN@) "The parser" "a `:='"))
+
+
+
+  
+
+
+;*****************************************************************************
+;*                                                                           *
+;*  1.2 - Routines for parsing all the abstraction prototypes' elements      *
+;*                                                                           *
+;*                                                                           *
+;*  SINTAX :                                                                 *
+;*                                                                           *
+;*  ABSTRACTION PROTOTYPE <new abstraction type name>                        *
+;*  flambda                                                                  *
+;*      rules                                                                *
+;*          <list of absrules>                                               *
+;*                                                                           *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*                                                                           *
+;*    NEWABSTYPENAME# Parses the name of a not yet declared abstraction type *
+;*    ABSTYPENAME#    Parses the name of an already declared abstraction type*
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM NEWABSTYPENAME# () 
+ (LET ((typename (FOLSYM# "The parser")))
+  (IF (ABSTYPE-NAME? typename)
+   (GERRM0 typename " is already a name of an abstraction type.")
+   typename)))  
+
+
+(DEFLAM ABSTYPENAME# () 
+ (LET ((typename (FOLSYM# "The parser")))
+  (IFN (ABSTYPE-NAME? typename)
+   (GERRM0 typename " is not a name of an abstraction type.")
+   typename)))  
+
+
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;*  2 - The printing of abstractions & abstypes                              *
+;*                                                                           *
+;*****************************************************************************
+
+;*****************************************************************************
+;*                                                                           *
+;*  2.1 Routines for abstractions' printing                                  *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*     abstraction-print      Prints an abstraction.                         *
+;*     flambda-print          Prints the language map.                       *
+;*     abstraction-print-name Prints the name of a given abstraction.        *
+;*     fomega-print           Prints the axiom map.                          *
+;*     fdelta-print           Prints the inference rule map.                 *
+;*     abskind-print          Prints the abskind.                            *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM abstraction-print (abs)
+ (SEQ
+  (PRINTMES "")
+  (PRINTMES2 "ABSTRACTION: " (abstraction-get-name abs))
+  (PRINTMES2 "GROUND: " (abstraction-get-gndctx abs))
+  (PRINTMES2 "ABSTRACT: "  (abstraction-get-absctx abs))
+  (abskind-print (abstraction-get-abskind abs))
+  (flambda-print (abstraction-get-flambda abs))
+  (fomega-print (abstraction-get-fomega abs))
+  (fdelta-print (abstraction-get-fdelta abs))
+  (PRINTMES ";")
+  (PRINTMES "")))
+
+
+(DEFSUB flambda-print (flambda) 
+ (SEQ
+  (PRINTMES "FLAMBDA")
+  (absmaps-print (flambda-get-absmaps flambda))
+  (absrules-print (flambda-get-absrules flambda))))
+
+
+;N.B. Do not convert it into a macro!
+(DEFLAM abstraction-print-name (abstraction)
+ (PRINTMES (abstraction-get-name abstraction)))
+
+
+(DEFSUB fomega-print (fomega)
+ (IF (MTL? fomega) 
+  MTL
+  (PRINTMES fomega)))
+
+
+(DEFSUB fdelta-print (fdelta)
+ (IF (MTL? fdelta) 
+  MTL
+  (PRINTMES fdelta)))	
+
+
+(DEFLAM abskind-print (abskind)
+ (IF (MTL? abskind) MTL
+ (IF (PC-ABSKIND? abskind) (PRINTMES "PC")
+ (IF (PI-ABSKIND? abskind) (PRINTMES "PI")
+ (IF (PD-ABSKIND? abskind) (PRINTMES "PD")
+ (IF (TC-ABSKIND? abskind) (PRINTMES "TC")
+ (IF (TI-ABSKIND? abskind) (PRINTMES "TI")
+                           (PRINTMES "TD"))))))))
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;*  2.1.1  Maps' printing routines                                           *
+;*                                                                           *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*     absmaps-print  Prints the whole absmaps.                              *
+;*     absmap-print   Prints a single absmap.                                *
+;*     mappair-print  Prints a single mappair.                               *
+;*                                                                           *
+;*****************************************************************************
+
+ 
+(DEFSUB absmaps-print (absmaps)
+ (SEQ
+  (PRINTMES "MAPS:")
+  (absmap-print (absmaps-get-imap absmaps)  'Inds)
+  (absmap-print (absmaps-get-smap absmaps)  'Sents)
+  (absmap-print (absmaps-get-fumap absmaps) 'Funs)
+  (absmap-print (absmaps-get-pmap absmaps)  'Preds)))
+   
+
+(DEFSUB absmap-print (absmap maptype)
+ (SEQ
+  (IF (MTL? absmap)
+   (PRINTMES maptype)
+   (SEQ
+    (PRINTMES2 maptype ":")
+    (MAPCAR 'mappair-print absmap)))))
+
+
+;N.B. Do not convert it into a macro!
+(DEFLAM mappair-print (mappair)
+ (PRINTMES3 
+     (mappair-get-leftsym mappair) "  ->  " 
+     (rightsym-get-label (mappair-get-rightsym mappair))))
+
+ 
+
+
+;*****************************************************************************
+;*                                                                           *
+;*  2.1.2  Rules' printing routines                                          *
+;*                                                                           *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*     absrules-print  Prints the whole list of absrules.                    *
+;*     absrule-print   Prints a single absrule.                              *
+;*                                                                           *
+;*****************************************************************************
+
+
+(DEFLAM absrules-print (absrules)
+ (LET ((rules (absrules-get-rules absrules)))
+  (IF (MTL? rules)
+   (PRINTMES "RULES")
+   (SEQ
+    (PRINTMES "RULES:")
+    (MAPCAR 'absrule-print rules)))))
+
+
+(DEFLAM absrule-print (rule)
+ (SEQ
+  (IF (TERM (absrule-get-left rule))
+   (HGKM-PRINC "TABS")
+   (HGKM-PRINC "WABS"))
+  (HGKM-PRINC LPAR)
+  (printexp (absrule-get-left rule)) 
+  (HGKM-PRINC RPAR)
+  (HGKM-PRINC "  :=  ")            
+  (printabsexp (absrule-get-right rule))                   
+  (PRINTMES "")))                        
+
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 2.2  Routines for the printing of abstract prototypes                     *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*     abstype-print      Prints an abstype.                                 *
+;*     abstype-print-name Prints the name of a given abstype.                *
+;*                                                                           *
+;*****************************************************************************
+
+; prints an abstraction prototype
+(DEFLAM abstype-print (abstype)
+ (LET ((typename (abstype-get-name abstype)))
+  (SEQ
+   (PRINTMES "")
+   (PRINTMES2 "Abstraction type " typename)
+   (PRINTMES "FLAMBDA")
+   (absrules-print (abstype-get-absrules abstype))
+   (PRINTMES ";")
+   (PRINTMES ""))))
+
+
+;N.B. Do not convert it into a macro!
+(DEFLAM abstype-print-name (abstype) (PRINTMES (abstype-get-name abstype)))
+
+
+
+
+
+
+
+
+
+
+

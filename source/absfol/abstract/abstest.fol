@@ -1,0 +1,267 @@
+;*****************************************************************************
+;*                                                                           *
+;*                  abstest.fol                                              *
+;*                                                                           *
+;*  This file includes a group of routines testing the correctness of both   *
+;*  the declaration and the application of abstractions.                     *
+;*     1. Errors in the abstraction declaration phase.                       *
+;*     2. Errors in the abstraction application phase.                       *
+;*                                                                           *
+;*****************************************************************************
+
+
+;*****************************************************************************
+;*                                                                           *
+;*  1. Tests for the declaration of abstractions and for instantiation of    *
+;*     abstraction prototypes.                                               *
+;*                                                                           *
+;*****************************************************************************
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 1.1 - Tests for maps                                                      *
+;*                                                                           *
+;*     This section includes some routines testing the correctness of        *
+;*     the maps. They are called during both the declarations of             *
+;*     abstractions and the instantiations of prototypes.                    *
+;*                                                                           *
+;*     There are two possible kinds of errors that are tested:               *
+;*      1. The same (left) symbol can be mapped twice ore more               *
+;*         ("leftsyms-test")                                                 *
+;*         es. "A -> B" and "A -> C".                                        *
+;*      2. The images of two different symbols have the same label but       *
+;*         different features ("rightsyms-test")                             *
+;*         es. "P -> B sent" and "Q -> B", where P and Q are predicates.     *
+;*                                                                           *
+;*                                                                           *
+;*                                                                           *
+;* SYNTAX:                                                                   *
+;*    (absmaps-test  absmaps)                                                *
+;*    (NOERR?        errlist)                                                *
+;*                                                                           *
+;* DESCRIPTION:                                                              *
+;*    absmaps-test   Tests the correctness of absmaps structure.             *
+;*                   It gives back two lists of symbols which caused         *
+;*                   errors.                                                 *
+;*                   (MTL MTL) means that the absmaps structure is correct.  *
+;*    NOERR?         Tests weather a list of error simbols is empty.         *
+;*                                                                           *
+;*****************************************************************************
+
+
+(DEFLAM absmaps-test (absmaps) 
+ (LET ((lefterr (leftsyms-test absmaps)))
+  (LET ((righterr (rightsyms-test absmaps)))
+   (LIST lefterr righterr))))
+   
+(DEFLAM NOERR? (errlist) (MTL? errlist))
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 1.1.1   Testing  leftsymbols                                              *
+;*                                                                           *
+;*  These routines test whether some symbols are mapped twice or more.       *
+;*                                                                           *
+;* SYNTAX:                                                                   *
+;*    (leftsyms-test                absmaps)                                 *
+;*    (repeated_syms-get            syms)                                    *
+;*    (absmaps-get-left<syntype>s   absmaps)                                 *
+;*    (leftsym_err-print            lab)                                     *
+;*                                                                           *
+;*                                                                           *
+;* DESCRIPTION:                                                              *
+;*    leftsyms-test                It gives back the list of all the symbols *
+;*                                 which are mapped into two or              *
+;*                                 more different symbols.                   *
+;*    repeated_syms-get            It gives back a list of all the simbols   *
+;*                                 which occur twice in a symbol list.       *
+;*    leftsym_err-print            Produces a suitable error message.        *
+;*                                                                           *
+;*  ERROR EXAMPLE:                                                           *
+;*     A -> B                                                                *
+;*     A -> C                                                                *
+;*                                                                           *
+;*****************************************************************************
+
+
+(DEFLAM leftsyms-test (absmaps)
+(APPEND 
+ (repeated_syms-get (MAPCAR 'mappair-get-leftsym (absmaps-get-imap absmaps)))
+ (repeated_syms-get (MAPCAR 'mappair-get-leftsym (absmaps-get-smap absmaps)))
+ (repeated_syms-get (MAPCAR 'mappair-get-leftsym (absmaps-get-fumap absmaps)))
+ (repeated_syms-get (MAPCAR 'mappair-get-leftsym (absmaps-get-pmap absmaps)))
+))
+
+
+(DEFLAM repeated_syms-get (syms)
+ (LET ((sym (REPETITION-GET syms)))
+  (IF (MTL? sym) 
+   MTL
+   (LCONS
+    sym 
+    (repeated_syms-get (OUTOF sym syms))))))
+
+
+             
+
+(DEFLAM leftsym_err-print (lab) 
+  (PRINTMES3 "The ground symbol `" lab                
+             "' can't be mapped in two or more different ways!"))         
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 1.1.2  Testing  rightsymbols.                                             *
+;*                                                                           *
+;*  These routines test whether the images of two (or more) different        *
+;*  symbols have the same label but different attributes.                    *
+;*                                                                           *
+;*                                                                           *
+;* SYNTAX:                                                                   *
+;*                                                                           *
+;*    (rightsyms-test         absmaps)                                       *
+;*    (rightfuns&inds-test    absmaps)                                       *
+;*    (rightpreds&sents-test  absmaps)                                       *
+;*    (attributes-test        rightsyms rightlabels)                         *
+;*    (cursyms-get            symtype)                                       *
+;*    (rightsym_err-print     lab)                                           *
+;*                                                                           *
+;*                                                                           *
+;* DESCRIPTION:                                                              *
+;*                                                                           *
+;*  rightsyms-test        Checks whether two or more abstract symbols        *
+;*                        are generated with the same name but different     *
+;*                        attributes, like arity, sort, fmaps etc.           *
+;*                        It gives back the list of all (the labels of)      *
+;*                        the rightsymbols which occur                       *
+;*                        twice ore more with different attributes.          *
+;*  rightpreds&sents-test Restriction of `rightsyms-test' to rightpreds      *
+;*                        & rightsents.                                      *
+;*  rightfuns&inds-test   Restriction of `rightsyms-test' to rightfuns       *
+;*                        & rightinds.                                       *
+;*  attributes-test       Gives back a list of the labels of the             *
+;*                        rightsymbols which don't believe correctly.        *
+;*  rightsym_err-print    Produces a suitable error message.                 *
+;*                                                                           *
+;*                                                                           *
+;*  ERROR EXAMPLE:                                                           *
+;*                                                                           *
+;*     Red  -> Coloured             (`Coloured' has arity 1)                 *
+;*     Blue -> Coloured arity 2     (`Coloured' has arity 2)                 *
+;*                                                                           *
+;*                                                                           *
+;*****************************************************************************
+
+
+(DEFLAM rightsyms-test (absmaps)
+ (APPEND (rightfuns&inds-test absmaps)
+         (rightpreds&sents-test absmaps)))
+
+
+(DEFLAM rightfuns&inds-test (absmaps)
+ (LET ((syms (APPEND (cursyms-get 'Indconst)
+                     (cursyms-get 'Indpar)
+                     (cursyms-get 'Indvar)
+                     (cursyms-get 'Funconst)
+                     (cursyms-get 'Funpar))))
+  (LET ((rightsyms (absmaps-get-rightsyms syms absmaps)))
+   (LET ((rightlabels (rightsyms-get-labels rightsyms)))
+    (attributes-test rightsyms rightlabels)))))
+
+
+(DEFLAM rightpreds&sents-test (absmaps)
+ (LET ((syms (APPEND (cursyms-get 'Sentconst)
+                     (cursyms-get 'Sentpar)
+                     (cursyms-get 'Predconst)
+                     (cursyms-get 'Predpar))))
+  (LET ((rightsyms (absmaps-get-rightsyms syms absmaps)))
+   (LET ((rightlabels (rightsyms-get-labels rightsyms)))
+    (attributes-test rightsyms rightlabels)))))
+
+
+
+(DEFLAM attributes-test (rightsyms rightlabels)
+ (IF (MTL? rightsyms)
+  MTL
+  (LET ((firstsym (FIRST rightsyms))
+        (restsym (REST rightsyms)))
+   (LET ((firstlab (FIRST rightlabels))
+         (restlab (REST rightlabels)))
+      (LET ((position (POS firstlab restlab)))
+       (IF (OR (ZERO? position) 
+               (EQUAL firstsym (HGKM-NTH position restsym)))
+        (attributes-test restsym restlab)
+        (LCONS firstlab (attributes-test restsym restlab))))))))
+
+
+
+(DEFLAM rightsym_err-print (lab) 
+  (PRINTMES3 "The abstract symbol `" lab                     
+             "' must have the same attributes in all its occurrences!"))    
+
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;*  2. Tests for the application of abstractions.                            *
+;*                                                                           *
+;*****************************************************************************
+
+;*****************************************************************************
+;*                                                                           *
+;*    2.1  Tests for sorted languages:                                       *
+;*         an abstraction can't be applied to sorted languages.              *
+;*                                                                           *
+;*    abssym-sort-test&print     Checks if a symbol is either a sort         *
+;*                         or a sorted symbol. In such case,                 *
+;*                         produces an  error message  and returns           *
+;*                         FVAL.                                             *
+;*    abssyms-sort-test&print    Applies `abssym-sort-test&print' to a whole *
+;*                         group of symbols: if only one doesn't             *
+;*                         verify it, it gives back FVAL,                    *
+;*                         producing a sequence of error messages.           *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM abssym-sort-test&print (sym)
+ (IF (IS-SORT sym)
+  (SEQ
+   (PRINTMES3 "`" sym 
+             "' is a sort, you can't abstract it as an ordinary Predconst.")
+   FVAL)
+ (IF (AND (INDSYM sym)
+          (NOT (EQUAL (sort sym) Mostgeneral)))
+  (SEQ
+   (PRINTMES3 "`" sym 
+             "' is a sorted individual, you can't abstract it.")
+   FVAL)
+ (IF (AND (FUNSYM sym) 
+          (NOT (EQUAL (LENGTH (fmaps sym)) 1)))
+  (SEQ
+   (PRINTMES3 "`" sym 
+             "' has not default fmaps, you can't abstract it.")
+   FVAL)
+  TVAL))))
+
+
+(DEFLAM abssyms-sort-test&print (syms)           
+ (IF (MTL? syms) 
+  TVAL
+  (IFN (abssym-sort-test&print (FIRST syms))
+   (SEQ 
+     (abssyms-sort-test&print (REST syms))
+     FVAL)
+   (abssyms-sort-test&print (REST syms)))))
+
+
+
+
+
+
+
+

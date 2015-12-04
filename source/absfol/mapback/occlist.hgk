@@ -1,0 +1,36 @@
+;**********************************************************************
+;*                                                                    *
+;*  SYNTAX:                                                           *
+;*   %OCCS%    ::= ( CUROCC ( LIST ) )                                *
+;*   CUROCC  ::= NATNUM                                               *
+;*   LIST    ::= ALT [ REP [ NATNUM ]  |  ALL ]                       *
+;*                                                                    *
+;*  DESCRIPTION:                                                      *
+;*   CUROCC is a counter starting from 0 (I suppose to parse exp      *
+;*   always from the beginning)                                       *
+;*   LIST   is a list of NATNUM or the atom ALL                       *
+;*   %OCCS% is a global variable used to manage list of occurrences.  *
+;*                                                                    *
+;**********************************************************************
+
+(DEFLAM occs-ini (occslist)
+ (IF (EQ 'ALL occslist)
+  (SETQ %OCCS% (LIST 0 (LIST 'ALL)))
+  (SETQ %OCCS% (LIST 0 occslist)) ) )
+
+(DEFSUB occs-get-curocc () (CAR %OCCS%) )
+
+(DEFSUB occs-get-list () (CAR (CDR %OCCS%)))
+
+(DEFLAM occs-gotit ()
+ (SETQ %OCCS% (LIST (ADD1 (occs-get-curocc)) (occs-get-list))))
+
+(DEFLAM occs-good? ()
+ (OR (HGKM-MEMBER (occs-get-curocc) (occs-get-list))
+     (HGKM-MEMBER 'ALL (occs-get-list))))
+
+(DEFLAM occs-del ()
+ (SETQ %OCCS% (LIST (occs-get-curocc)
+		  (HGKM-DELETE (occs-get-curocc) (occs-get-list)))))
+ 
+(DEFSUB occs-empty? () (MTL? (CAR (CDR %OCCS%))))

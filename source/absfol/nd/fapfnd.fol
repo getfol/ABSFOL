@@ -1,0 +1,6 @@
+(DEFLAM existi (fact TERMLIST)
+ (proof-existi
+  (wffexists-mak (fact-get-wff fact) TERMLIST)
+  (fact-get-deplist fact)
+  (reason-mak 'EXISTI (ras2-mak (fact_ra-mak fact)
+                                (terms+occ_ra-mak TERMLIST)))))

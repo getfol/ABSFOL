@@ -1,0 +1,220 @@
+;*****************************************************************************
+;*                                                                           *
+;*                        declabs.fol                                        *
+;*                                                                           *
+;*  This file includes all the higher level routines to the declaration of   *
+;*  abstractions, abstraction prototypes and for their instantiation.        *
+;*                                                                           *
+;*****************************************************************************
+
+;*****************************************************************************
+;*                                                                           *
+;*  1. - Declaration of an abstraction.                                      *
+;*                                                                           *
+;*  SYNTAX:                                                                  *
+;*     (absdeclare   <abstraction>)                                          *
+;*                                                                           *
+;* DESCRIPTION:                                                              *
+;*     absdeclare    If `abs' is a correct abstraction, it is added to       *
+;*                   the global list of abstractions, otherwise some         *
+;*                   error messages are produced.                            *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM absdeclare (abs)
+ (LET ((errs (absmaps-test 
+                (flambda-get-absmaps (abstraction-get-flambda abs)))))
+  (LET ((gnderrs (FIRST errs))
+        (abserrs (SECOND errs)))
+  (IF (AND (NOERR? gnderrs) (NOERR? abserrs))
+   (abslist-add-abs abs)
+   (LET ((absname (abstraction-get-name abs)))
+    (SEQ
+     (PRINTMES "")
+     (PRINTMES3 "There are some errors in the declaration of `" absname " ':")
+     (PRINTMES "")
+     (MAPCAR 'leftsym_err-print gnderrs)
+     (MAPCAR 'rightsym_err-print abserrs)
+     (PRINTMES "")
+     (PRINTMES3 "The abstraction `" absname "' has not been declared.")
+     (PRINTMES "")))))))
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;*  1.1 Some more complex routines for handling maps                         *
+;*                                                                           *
+;* SYNTAX:                                                                   *
+;*    (absmaps-get-right<syntype>  <syntype>  absmaps)                       *
+;*    (absmap-get-rightsym         sym absmap)                               *
+;*    (absmaps-get-rightsym        sym absmaps)                              *
+;*    (absmaps-get-rightsyms       syms absmaps)                             *
+;*                                                                           *
+;* DESCRIPTION:                                                              *
+;*    absmaps-get-right<syntype> Each gives back the specific rightsymbol    *
+;*                               corresponding to the given ground symbol.   *
+;*    absmap-get-rightsym        Given a ground symbol it gives back the     *
+;*                               corresponding rightsymbol in the required   *
+;*                               absmap. if the ground symbol does't occur   *
+;*                               in the list in gives bach a rightsym copy   *
+;*                               of the symbol (identity by default).        *
+;*    absmaps-get-rightsym       Given a generic type symbol, it gives back  *
+;*                               the corresponding rightsymbol.              *
+;*                               it is used when the map type is unknown     *
+;*    absmaps-get-rightsyms      Given a generic type list of symbols,       *
+;*                               it gives back the                           *
+;*                               corresponding list of rightsymbols.         *
+;*    sym2rightsym               Given a generic symbol, it gives back       *
+;*                               its esquivalent rightsymbol.                *
+;*                                                                           *
+;*****************************************************************************
+    
+(DEFSUB absmaps-get-rightind (ind absmaps) 
+     (absmap-get-rightsym ind (absmaps-get-imap absmaps)))
+(DEFSUB absmaps-get-rightsent (sent absmaps) 
+     (absmap-get-rightsym sent (absmaps-get-smap absmaps)))
+(DEFSUB absmaps-get-rightfun (fun absmaps) 
+     (absmap-get-rightsym fun (absmaps-get-fumap absmaps)))
+(DEFSUB absmaps-get-rightpred (pred absmaps) 
+     (absmap-get-rightsym pred (absmaps-get-pmap absmaps)))
+
+
+(DEFLAM absmap-get-rightsym (sym absmap) 
+ (LET ((abssym (mappair-get-rightsym (HGKM-ASSOC sym absmap))))
+  (IF (IST abssym) 
+   abssym
+   (sym2rightsym sym))))
+
+
+(DEFLAM sym2rightsym (sym)
+ (IF (SENTSYM sym) 
+  (rightsent-mak (syntype sym) (outnam sym) (sact sym))
+ (IF (PREDSYM sym) 
+  (rightpred-mak (syntype sym) (outnam sym) (arity sym) (fmaps sym)(sact sym))
+ (IF (FUNSYM sym) 
+  (rightfun-mak (syntype sym) (outnam sym) (arity sym) (fmaps sym) (sact sym))
+  (rightind-mak (syntype sym) (outnam sym) (sort sym) (sact sym))))))
+
+
+
+
+
+
+(DEFLAM absmaps-get-rightsym (sym absmaps)
+ (IF (SIMPSYM sym)
+  (IF (SENTSYM sym) 
+   (absmaps-get-rightsent sym absmaps) 
+   (absmaps-get-rightind sym absmaps))
+  (IF (PREDSYM sym) 
+   (absmaps-get-rightpred sym absmaps) 
+   (absmaps-get-rightfun sym absmaps))))
+
+
+(DEFLAM absmaps-get-rightsyms (syms absmaps)
+ (IF (MTL? syms)
+  MTL
+  (LCONS 
+    (absmaps-get-rightsym (FIRST syms) absmaps)
+    (absmaps-get-rightsyms (REST syms) absmaps))))
+    
+
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;*  1.2 Some more complex routines for handling absrules:                    *
+;*                                                                           *
+;*      Convert a list of rules to an associative memory formula (amf)       *
+;*      (see also amf.fol and amf.hgk).                                      *
+;*                                                                           *
+;* SYNTAX:                                                                   *
+;*    (absrule2amf absrule)                                                  *
+;*    (absrules2amf absrules)                                                *
+;*                                                                           *
+;* DESCRIPTION:                                                              *
+;*    absrule2amf     creates an amf from an absrule                         *
+;*    absrules2amf    creates an amf from a list of absrules                 *
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM absrule2amf (absrule)
+ (LET ((lhs-rule (absrule-get-left absrule))
+       (rhs-rule (absrule-get-right absrule))
+       ($vars (ls-get-all_objs (APPEND (cur-sys-symls-get-ls 'Indvar)
+                                       (cur-sys-symls-get-ls 'Indpar)
+                                       (cur-sys-symls-get-ls 'Sentpar)
+                                       (cur-sys-symls-get-ls 'Predpar)
+                                       (cur-sys-symls-get-ls 'Funpar)))))
+;  (LET ((vars&pars (UNION (INTERSECT $vars (parameters lhs-rule))
+;                               (INTERSECT $vars (UNION (bound lhs-rule)
+;                                                       (frees lhs-rule)))))
+;        (freevars (SUBTRACT (UNION (bound lhs-rule) 
+;                                  (frees lhs-rule))
+;                           $vars)))
+  (LET ((vars&pars (UNION (INTERSECT $vars (parameters lhs-rule))
+                          (bound lhs-rule))))
+   (LET ((freevars (SUBTRACT (frees lhs-rule) vars&pars)))
+    (amf-mak
+     (mtree-build&setleaf lhs-rule (leaf-mak rhs-rule MTL) vars&pars)
+     freevars))))))
+
+(DEFLAM absrules2amf (absrules)
+ (IF (MTL? absrules) 
+  (amf-mak-empty)
+  (amf-union (absrule2amf (FIRST absrules))
+             (absrules2amf (REST absrules)))))
+
+;*****************************************************************************
+;*                                                                           *
+;* 2. -   Instantiation of an abstraction prototype.                         *
+;*                                                                           *
+;*                                                                           *
+;* SYNTAX:                                                                   *
+;*     (abstype-instantiate                                                  *
+;*           name gndctx absctx abstype abskind pflambda pfomega pfdelta)    *
+;*     (flambda-instantiate     partialflambda abstype_absrules)             *
+;*     (absrules-instantiate    partial_absrules abstype_absrules)           *
+;*                                                                           *
+;* DESCRIPTION:                                                              *
+;*     abstype-instantiate     instantiates an abstraction prototype         *
+;*     flambda-instantiate     instantiates flambda                          *
+;*     absrules-instantiate    instantiates the rules structure              *
+;*                                                                           *
+;*****************************************************************************
+    
+(DEFLAM abstype-instantiate 
+                 (name gndctx absctx abstype abskind pflambda pfomega pfdelta)
+ (abstraction-mak 
+      name 
+      gndctx 
+      absctx
+      abskind 
+      (flambda-instantiate 
+          pflambda
+          (abstype-get-absrules abstype))
+      pfomega
+      pfdelta))
+
+
+(DEFLAM flambda-instantiate (partialflambda abstype_absrules)
+ (flambda-mak
+   (flambda-get-absmaps partialflambda)
+   (absrules-instantiate (flambda-get-absrules partialflambda) 
+                         abstype_absrules)))
+
+
+(DEFLAM absrules-instantiate (partial_absrules abstype_absrules)
+ (absrules-mak
+    (APPEND (absrules-get-rules partial_absrules)
+            (absrules-get-rules abstype_absrules))))
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,120 @@
+;*****************************************************************************
+;*                                                                           *
+;*                  abstop.hgk                                               *
+;*                                                                           *
+;*  This file contains all the routines for setting up the "abstract"        *
+;*  and "abstraction" commands' options.                                     *
+;*  For each command a global variable associates any option key  to         *
+;*  its specific parsing function.                                           *
+;*                                                                           *
+;*  ES:       in "%ABSTRACTION_OPTS%" the option key `DECLARE'               *
+;*            is associated to the parsing function "ABSDECLARE#".           *
+;*                                                                           *
+;*****************************************************************************
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 1               Setting up the `ABSTRACTION' command                      *
+;*                                                                           *
+;*                                                                           *
+;*   The following routines are used to handle all the possible options      *
+;*   of the command `ABSTRACTION'.                                           *
+;*                                                                           *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*                                                                           *
+;*     %ABSTRACTION_OPTS%       The list of all the options for command      *
+;*                              `abstract'.                                  *
+;*     abstraction_fun-set      Associates the name of a parsing function to *
+;*                              a given option token.                        *
+;*     abstraction_fun-get      Given an option token, it returns the name of*
+;*                              the corresponding parsing function.          *
+;*     abstraction_opts-get     Returns %ABSTRACTION_OPTS%.                  *
+;*     abstraction_opts-add-key Adds a new `abstraction' option to           *
+;*                              %ABSTRACTION_OPTS%.                          *
+;*     mknewabstractiontoken    Adds a new `abstraction' option.             *
+;*     GETABSTRACTION           According to the option parsed,              *
+;*                              it gives back the name of the function which *
+;*                              will parse the remaining part of the command.*
+;*                                                                           *
+;*****************************************************************************
+   
+(DEFLAM abstraction_fun-set (KEY SYNFUN) (SETPROP KEY SYNFUN 'ABSTRACTION))
+
+(DEFLAM abstraction_fun-get (KEY) (GETPROP KEY 'ABSTRACTION))
+
+(DEFLAM abstraction_opts-get () %ABSTRACTION_OPTS%)
+
+(DEFLAM abstraction_opts-ini () (SETQ %ABSTRACTION_OPTS% MTL))
+
+(DEFLAM abstraction_opts-add-key (KEY) 
+  (SETQ %ABSTRACTION_OPTS% (CONS KEY %ABSTRACTION_OPTS%)))
+
+(DEFLAM mknewabstractiontoken (KEY SYNFUN)
+ (SEQ
+  (abstraction_fun-set KEY SYNFUN)
+  (abstraction_opts-add-key KEY)))
+
+(DEFLAM GETABSTRACTION (KEY)
+ (IF (NATNUM KEY) 
+  (FERRM1 "This is not a legal option for command `ABSTRACTION'.") 
+  (LET ((abstraction_fun (abstraction_fun-get KEY)))
+   (IF (IST abstraction_fun) 
+    (NEXT-TOKEN abstraction_fun)
+    (FERRM1 "This is not a legal option for command `ABSTRACTION'.")))))
+
+
+
+
+
+;*****************************************************************************
+;*                                                                           *
+;* 2               Setting up the `ABSTRACT' command                         *
+;*                                                                           *
+;*                                                                           *
+;*   The following routines are used to handle all the possible options      *
+;*   of the command `ABSTRACT'.                                              *
+;*                                                                           *
+;*                                                                           *
+;*  DESCRIPTION:                                                             *
+;*                                                                           *
+;*     %ABSTRACT_OPTS%          The list of all the options for command      *
+;*                              `abstract'.                                  *
+;*     abstract_fun-set         Associates the name of a parsing function to *
+;*                              a given option token.                        *
+;*     abstract_fun-get         Given an option token, it returns the name of*
+;*                              the corresponding parsing function.          *
+;*     abstract_opts-get        Returns %ABSTRACT_OPTS%.                     *
+;*     abstract_opts-add-key    Adds a new `abstract' option to              *
+;*                              %ABSTRACT_OPTS%.                             *
+;*     mknewabstracttoken       Adds a new `abstract' option.                *
+;*     GETABSTRACT              According to the option parsed,              *
+;*                              it gives back the name of the function which *
+;*                              will parse the remaining part of the command.*
+;*                                                                           *
+;*****************************************************************************
+
+(DEFLAM abstract_fun-set (KEY SYNFUN) (SETPROP KEY SYNFUN 'ABSTRACT))
+
+(DEFLAM abstract_fun-get (KEY) (GETPROP KEY 'ABSTRACT))
+
+(DEFLAM abstract_opts-get () %ABSTRACT_OPTS%)
+
+(DEFLAM abstract_opts-ini () (SETQ %ABSTRACT_OPTS% MTL))
+
+(DEFLAM abstract_opts-add-key (KEY) 
+  (SETQ %ABSTRACT_OPTS% (CONS KEY %ABSTRACT_OPTS%)))
+
+(DEFLAM mknewabstracttoken (KEY SYNFUN)
+ (SEQ
+  (abstract_fun-set KEY SYNFUN)
+  (abstract_opts-add-key KEY)))
+
+(DEFLAM GETABSTRACT (KEY)
+ (IF (NATNUM KEY) (FERRM1 "This is not a legal option for command `ABSTRACT'.")
+  (LET ((abstract_fun (abstract_fun-get KEY)))
+   (IF (IST abstract_fun) (NEXT-TOKEN abstract_fun)
+    (FERRM1 "This is not a legal option for command `ABSTRACT'.")))))
+

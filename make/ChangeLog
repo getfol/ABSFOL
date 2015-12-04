@@ -1,0 +1,20 @@
+Wed Jan 18 12:43:54 1995  Marco Roveri  <marco@tarski.mrg.dist.unige.it>
+
+        * source/abstract/absrew.fol: rewritten all the *compexpmatch
+        function of the rewriter to abs-*compexpmatch in order to allow
+        the new one to call the abs-expmatch instead of the expmatch of
+        the rewriter which calls quantwffmatch. At this time it seem not
+        necessary to do a call to the quantwffmatch functions. There is to
+        see what Fausto and Peck say about the alternative solution of
+        modifying the bindmatch of the rewriter. This allow abstraction to
+        attach completely the abstrcation rewriting on the getfol rewriter.
+
+Wed Nov 16 18:35:02 1994  Marco Roveri  <marco@frege.mrg.dist.unige.it>
+
+        * getfol.cfg: rimosso il modulo context, per motivi di
+        compilazione dovuti alla ridefinizione di alcune funzioni.
+
+        * agetfol.cfg: aggiunto il modulo context, per motivi di
+        compilazione dovuti alla ridefinizione di alcune funzioni.
+
+
